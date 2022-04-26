@@ -2,11 +2,11 @@
 lib.name = n_gui
 cflags = 
 class.sources = \
-n_canvas.c \
 n_knob.c 
 sources = \
 ./include/*
 datafiles = \
+n_gui-meta.pd \
 README.md \
 LICENSE.txt
 

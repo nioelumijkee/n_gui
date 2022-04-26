@@ -1,30 +1,10 @@
-#N canvas 594 77 507 675 10;
-#X obj 2 9 cnv 4 502 66 bot_frame empty empty 16 16 0 10 #000000 #000000
-0;
-#X obj 3 10 cnv 4 500 64 bot_back empty empty 16 16 0 10 #fcfcfc #fcfcfc
-0;
-#X text 25 24 Image-based knob., f 77;
-#X text 25 35 Work with .gif and .png files.(did not check other formats).
-, f 77;
-#X text 25 46 Add an object and change parameters using the settings
-window or, f 77;
-#X text 25 57 the methods described below., f 77;
-#X obj 16 1 cnv 4 102 18 top_frame empty empty 16 16 0 10 #000000 #000000
-0;
-#X obj 17 2 cnv 4 100 16 top_back empty n_knob 8 8 1 10 #fcfcfc #000000
-0;
-#X obj 2 87 cnv 4 502 110 bot_frame empty empty 16 16 0 10 #000000
-#000000 0;
-#X obj 3 88 cnv 4 500 108 bot_back empty empty 16 16 0 10 #fcfcfc #fcfcfc
-0;
-#X obj 16 79 cnv 4 102 18 top_frame empty empty 16 16 0 10 #000000
-#000000 0;
-#X obj 17 80 cnv 4 100 16 top_back empty preview: 8 8 1 10 #fcfcfc
-#000000 0;
-#X obj 2 209 cnv 4 502 374 bot_frame empty empty 16 16 0 10 #000000
-#000000 0;
-#X obj 3 210 cnv 4 500 372 bot_back empty empty 16 16 0 10 #fcfcfc
-#fcfcfc 0;
+#N canvas 603 34 507 675 10;
+#X text 189 12 Image-based knob.;
+#X text 62 27 Work with .gif and .png files.(did not check other formats).
+;
+#X text 53 42 Add an object and change parameters using the settings
+window or, f 64;
+#X text 151 57 the methods described below.;
 #X text 49 224 <float> - set state value and send to outlet., f 73
 ;
 #X text 25 235 set <float> - set state value., f 77;
@@ -96,55 +76,35 @@ with the mouse, f 77;
 state value., f 77;
 #X text 25 554 <bang> - send to outlet state value., f 77;
 #X text 25 565 default - set default state value., f 77;
-#X obj 16 201 cnv 4 102 18 top_frame empty empty 16 16 0 10 #000000
-#000000 0;
-#X obj 17 202 cnv 4 100 16 top_back empty inlet: 8 8 1 10 #fcfcfc #000000
-0;
-#X obj 2 595 cnv 4 502 33 bot_frame empty empty 16 16 0 10 #000000
-#000000 0;
-#X obj 3 596 cnv 4 500 31 bot_back empty empty 16 16 0 10 #fcfcfc #fcfcfc
-0;
 #X text 25 610 double click, f 77;
 #X text 109 610 - set default state value and send to outlet., f 63
 ;
-#X obj 16 587 cnv 4 102 18 top_frame empty empty 16 16 0 10 #000000
-#000000 0;
-#X obj 17 588 cnv 4 100 16 top_back empty mouse: 8 8 1 10 #fcfcfc #000000
-0;
-#X obj 2 640 cnv 4 502 33 bot_frame empty empty 16 16 0 10 #000000
-#000000 0;
-#X obj 3 641 cnv 4 500 31 bot_back empty empty 16 16 0 10 #fcfcfc #fcfcfc
-0;
 #X text 25 655 outlet value., f 77;
-#X obj 16 632 cnv 4 102 18 top_frame empty empty 16 16 0 10 #000000
-#000000 0;
-#X obj 17 633 cnv 4 100 16 top_back empty outlet: 8 8 1 10 #fcfcfc
-#000000 0;
 #X obj 57 124 n_knob default.gif 1 33 0 1 0.01 0.5 256 empty empty
-empty 11 0 -8 0 0 0 0 5 11 0 42 0;
-#X floatatom 57 161 5 0 0 0 - - -;
+empty 11 0 -8 0 0.58 0 0 5 11 0 42 0;
+#X floatatom 57 161 5 0 0 0 - - - 0;
 #X obj 230 124 n_knob default.gif 1 33 0 1 0.01 0.5 256 \\\$0-s \\\$0-r
-empty 11 0 -8 0 0.7 0 0 5 11 0 42 0;
-#X floatatom 230 161 5 0 0 0 - - -;
+empty 11 0 -8 0 0.5 0 0 5 11 0 42 0;
+#X floatatom 230 161 5 0 0 0 - - - 0;
 #X obj 113 141 r \$0-s;
-#X floatatom 113 162 5 0 0 0 - - -;
-#X floatatom 173 141 5 0 0 0 - - -;
+#X floatatom 113 162 5 0 0 0 - - - 0;
+#X floatatom 173 141 5 0 0 0 - - - 0;
 #X obj 173 161 s \$0-r;
 #N canvas 578 135 388 532 examples 0;
 #X obj 109 91 n_knob default.gif 1 33 0 122 0.01 0.5 256 empty empty
 Pitch 11 0 -8 0 49.45 1 0 5 11 0 42 0;
-#X floatatom 109 128 5 0 0 0 - - -;
+#X floatatom 109 128 5 0 0 0 - - - 0;
 #X obj 109 148 mtof;
 #X obj 109 207 phasor~;
 #X obj 110 242 lop~;
 #X obj 173 126 n_knob default.gif 1 33 0 122 0.01 0.5 256 empty empty
 Frequency 11 0 -8 0 61 1 0 5 11 0 42 0;
-#X floatatom 173 166 5 0 0 0 - - -;
+#X floatatom 173 166 5 0 0 0 - - - 0;
 #X obj 173 183 mtof;
 #X obj 153 278 n_knob default.gif 1 33 0 1 0.01 0.5 256 empty empty
 Amplitude 11 0 -8 0 0.23 1 0 5 11 0 42 0;
 #X obj 110 372 *~;
-#X floatatom 153 315 5 0 0 0 - - -;
+#X floatatom 153 315 5 0 0 0 - - - 0;
 #X msg 173 201 \$1 30;
 #X obj 173 219 line;
 #X msg 109 170 \$1 30;
@@ -152,7 +112,7 @@ Amplitude 11 0 -8 0 0.23 1 0 5 11 0 42 0;
 #X msg 153 332 \$1 30;
 #X obj 153 350 line~;
 #X obj 132 398 tgl 15 0 empty empty sound 17 7 0 10 #fcfcfc #000000
-#000000 1 1;
+#000000 0 1;
 #X obj 111 416 *~ 0;
 #X obj 111 437 dac~;
 #X connect 0 0 1 0;
@@ -175,7 +135,7 @@ Amplitude 11 0 -8 0 0.23 1 0 5 11 0 42 0;
 #X connect 17 0 18 1;
 #X connect 18 0 19 0;
 #X connect 18 0 19 1;
-#X restore 294 157 pd examples;
+#X restore 378 108 pd examples;
 #N canvas 326 136 512 408 files 0;
 #X obj 101 250 n_knob default.gif 1 33 0 1 0.01 0.5 256 empty empty
 empty 11 0 -8 0 0 0 0 5 11 0 42 0;
@@ -197,13 +157,13 @@ vertical orientation(0 - horizontal \, 1 - vertical).;
 #X text 437 161 |;
 #X text 437 171 v;
 #X text 363 244 <--->;
-#X floatatom 101 292 5 0 0 0 - - -;
+#X floatatom 101 292 5 0 0 0 - - - 0;
 #X connect 0 0 14 0;
 #X connect 2 0 0 0;
 #X connect 3 0 0 0;
 #X connect 4 0 0 0;
 #X connect 5 0 0 0;
-#X restore 294 176 pd files \, frames and orientation;
+#X restore 252 88 pd files \, frames and orientation;
 #N canvas 62 215 400 372 label 0;
 #X obj 129 187 n_knob default.gif 1 33 0 1 0.01 0.5 256 empty empty
 empty 11 15 -8 0 0 0 0 5 11 0 42 0;
@@ -215,18 +175,18 @@ empty 11 15 -8 0 0 0 0 5 11 0 42 0;
 #X connect 2 0 0 0;
 #X connect 3 0 0 0;
 #X connect 4 0 0 0;
-#X restore 298 98 pd label;
+#X restore 52 88 pd label;
 #N canvas 571 205 400 372 num 0;
-#X obj 129 187 n_knob default.gif 1 33 -1 1 0.02 0 256 empty empty
-Knob 11 0 -4 16525352 0.3 0 0 5 11 34 -8 3952892;
+#X obj 129 187 n_knob default.gif 1 33 -100 100 0.01 0 333 empty empty
+Knob 11 0 -4 16525352 0.3 0 1 4 14 -7 40 0;
 #X obj 49 15 tgl 15 0 empty empty empty 17 7 0 10 #fcfcfc #000000 #000000
 0 1;
 #X msg 49 37 numvis \$1;
-#X msg 91 111 knobpar -1 1 0.02 0 256;
+#X msg 120 114 knobpar -1 1 0.02 0 256;
 #X msg 68 73 numpar 3 11 -1 42 13;
 #X msg 57 53 numpar 4 14 -7 40 22;
 #X text 79 10 switch numuric out visible;
-#X msg 101 131 knobpar -100 100 0.01 0 333;
+#X msg 130 134 knobpar -100 100 0.01 0 333;
 #X msg 69 273 label Knob \, labpar 11 0 -4 13;
 #X msg 80 91 numpar 5 11 34 -8 18;
 #X connect 1 0 2 0;
@@ -237,18 +197,33 @@ Knob 11 0 -4 16525352 0.3 0 0 5 11 34 -8 3952892;
 #X connect 7 0 0 0;
 #X connect 8 0 0 0;
 #X connect 9 0 0 0;
-#X restore 298 118 pd num;
-#N canvas 0 50 450 300 knob_24x24x65 0;
-#X obj 204 99 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
-empty Par 11 2 -8 0 0.66 0 0 4 11 -8 32 0;
-#X obj 254 99 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
-empty Par 11 2 -8 0 0.55 0 0 4 11 -8 32 0;
-#X obj 204 169 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
-empty Par 11 2 -8 0 0.39 0 0 4 11 -8 32 0;
-#X obj 254 169 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
-empty Par 11 2 -8 0 0.48 0 0 4 11 -8 32 0;
-#X restore 366 106 pd knob_24x24x65;
-#X connect 89 0 90 0;
-#X connect 91 0 92 0;
-#X connect 93 0 94 0;
-#X connect 95 0 96 0;
+#X restore 107 88 pd num;
+#N canvas 184 98 450 300 knob_24x24x65 0;
+#X obj 122 142 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
+empty 0 12 8 -8 65793 0.25 0 1 4 10 -8 32 6316128;
+#X obj 162 142 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
+empty 1 12 8 -8 65793 0.4 0 1 4 10 -8 32 6316128;
+#X obj 202 142 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
+empty 2 12 8 -8 65793 0.5 0 1 4 10 -8 32 6316128;
+#X obj 242 142 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
+empty 3 12 8 -8 65793 0.75 0 1 4 10 -8 32 6316128;
+#X floatatom 68 166 5 0 0 0 - - - 0;
+#X floatatom 319 166 5 0 0 0 - - - 0;
+#X connect 0 0 4 0;
+#X connect 3 0 5 0;
+#X restore 150 88 pd knob_24x24x65;
+#X text 9 214 Inlet:;
+#X text 5 596 Mouse:;
+#X text 3 640 Outlet:;
+#X obj 27 6 cnv 4 450 4 empty empty empty 20 12 0 14 #000000 #404040
+0;
+#X obj 27 208 cnv 4 450 4 empty empty empty 20 12 0 14 #000000 #404040
+0;
+#X obj 27 585 cnv 4 450 4 empty empty empty 20 12 0 14 #000000 #404040
+0;
+#X obj 27 635 cnv 4 450 4 empty empty empty 20 12 0 14 #000000 #404040
+0;
+#X connect 69 0 70 0;
+#X connect 71 0 72 0;
+#X connect 73 0 74 0;
+#X connect 75 0 76 0;

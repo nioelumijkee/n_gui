@@ -1,28 +1,43 @@
-/*
+/*------------------------------------------------------------------------------
 
   sources of ideas:
   ggee library: image
   else library: pic
   GPL v.3
-  2021(c)Nioelumijke
+  2021(c)Nio
 
-*/
+------------------------------------------------------------------------------*/
 
 #include <string.h>
 #include "m_pd.h"
 #include "m_imp.h"
 #include "g_canvas.h"
 #include "g_all_guis.h"
-#include "include/pd_func2.h"
-#include "include/clip.h"
+#include "include/pdfunc.h"
 
-#define HOR 0
-#define VER 1
-#define NOINIT 0
-#define INIT 1
+#define HOR      0
+#define VER      1
+#define NOINIT   0
+#define INIT     1
 #define NEVERST -99999999
 
+//----------------------------------------------------------------------------//
+#define AF_CLIP_MINMAX(MIN, MAX, IN) \
+  if ((IN) < (MIN))                  \
+    (IN) = (MIN);                    \
+  else if ((IN) > (MAX))             \
+    (IN) = (MAX);
 
+#define AF_CLIP_MIN(MIN, IN) \
+  if ((IN) < (MIN))          \
+    (IN) = (MIN);
+
+#define AF_CLIP_MAX(MAX, IN) \
+  if ((IN) > (MAX))          \
+    (IN) = (MAX);
+
+
+//----------------------------------------------------------------------------//
 static t_class *n_knob_class;
 t_widgetbehavior n_knob_widgetbehavior;
 t_symbol *extdir;
@@ -468,7 +483,7 @@ static void n_knob_loadimage(t_n_knob *x,
 {
   if (filename->s_name[0] == '\0') 
     {
-      error("n_knob: bad filename");
+      post("n_knob error: bad filename");
       return;
     }
   x->img_w = -1;
@@ -782,7 +797,7 @@ static void n_knob_size_callback(t_n_knob *x, t_float w, t_float h)
 {
   if (w == -1)
     {
-      error("n_knob: image loading error: %s",x->filename->s_name);
+      post("n_knob error: image loading error: %s",x->filename->s_name);
       return;
     }
 
@@ -911,12 +926,12 @@ static void n_knob_dialog(t_n_knob *x, t_symbol *s, int ac, t_atom *av)
 {
   if (!x)
     {
-      error("n_knob: dialog error:  unexisting object");
+      post("n_knob error: dialog error:  unexisting object");
       return;
     }
   if (ac != 22)
     {
-      error("n_knob: dialog error: number arguments");
+      post("n_knob error: dialog error: number arguments");
       return;
     }
   t_symbol *filename    = atom_getsymbolarg(0,ac,av);
