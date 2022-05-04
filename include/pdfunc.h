@@ -8,14 +8,14 @@ t_float mygetfloatarg(int n, int ac, t_atom *av)
 {
   t_symbol *buf;
   if (IS_A_FLOAT(av, n))
-	{
+    {
       return (atom_getfloatarg(n, ac, av));
-	}
+    }
   else
-	{
+    {
       buf = (t_symbol *)atom_getsymbolarg(n, ac, av);
       return (atof(buf->s_name));
-	}
+    }
 }
 
 //----------------------------------------------------------------------------//
@@ -23,14 +23,14 @@ t_int mygetintarg(int n, int ac, t_atom *av)
 {
   t_symbol *buf;
   if (IS_A_FLOAT(av, n))
-	{
+    {
       return ((int)atom_getfloatarg(n, ac, av));
-	}
+    }
   else
-	{
+    {
       buf = (t_symbol *)atom_getsymbolarg(n, ac, av);
       return (atoi(buf->s_name));
-	}
+    }
 }
 
 //----------------------------------------------------------------------------//
@@ -38,14 +38,14 @@ t_symbol *mygetsymbolarg(int n, int ac, t_atom *av)
 {
   char buf[20];
   if (IS_A_FLOAT(av, n))
-	{
+    {
       sprintf(buf, "%d", (int)atom_getfloatarg(n, ac, av));
       return ((t_symbol *)gensym(buf));
-	}
+    }
   else
-	{
+    {
       return ((t_symbol *)atom_getsymbolarg(n, ac, av));
-	}
+    }
 }
 
 //----------------------------------------------------------------------------//
@@ -54,21 +54,23 @@ void dollarinstring(char *str)
   int i = 0;
   int dollar = -1;
   while (str[i] != '\0')
-	{
+    {
       if (str[i] == '$')
-        dollar = i;
-      i++;
-	}
-  if (dollar != -1)
 	{
+	  dollar = i;
+	}
+      i++;
+    }
+  if (dollar != -1)
+    {
       str[i + 1] = '\0';
       while (i != dollar)
-		{
+	{
           str[i] = str[i - 1];
           i--;
-		}
-      str[i] = '\\';
 	}
+      str[i] = '\\';
+    }
 }
 
 //----------------------------------------------------------------------------//
@@ -91,13 +93,13 @@ t_symbol *dollarzero2sym(t_symbol *s, int id)
               buf[j] = buf_id[k];
               k++;
               j++;
-			}
+	    }
           j--;
           i++;
-		}
+	}
       i++;
       j++;
-	}
+    }
   buf[j] = '\0';
   return (gensym(buf));
 }

@@ -22,17 +22,17 @@
 #define NEVERST -99999999
 
 //----------------------------------------------------------------------------//
-#define AF_CLIP_MINMAX(MIN, MAX, IN) \
+#define CLIP_MINMAX(MIN, MAX, IN) \
   if ((IN) < (MIN))                  \
     (IN) = (MIN);                    \
   else if ((IN) > (MAX))             \
     (IN) = (MAX);
 
-#define AF_CLIP_MIN(MIN, IN) \
+#define CLIP_MIN(MIN, IN) \
   if ((IN) < (MIN))          \
     (IN) = (MIN);
 
-#define AF_CLIP_MAX(MAX, IN) \
+#define CLIP_MAX(MAX, IN) \
   if ((IN) > (MAX))          \
     (IN) = (MAX);
 
@@ -62,17 +62,17 @@ typedef struct _n_knob
   t_symbol *rcv;
   t_symbol *lab;
   int lab_fs;
-  int ldx;
-  int ldy;
-  int lcol;
+  int lab_x;
+  int lab_y;
+  int lab_col;
   t_float state;
   int init;
   int num_vis;
-  int numw;
+  int num_w;
   int num_fs;
-  int ndx;
-  int ndy;
-  int ncol;
+  int num_x;
+  int num_y;
+  int num_col;
 
   int img_w;
   int img_h;
@@ -88,6 +88,7 @@ typedef struct _n_knob
   int sel;
   int shift;
   t_float count;
+  int numint;
   int lab_vis;
   t_symbol *snd_real;
   int snd_able;
@@ -175,13 +176,13 @@ static void n_knob_draw_label(t_n_knob *x)
   sys_vgui(".x%x.c create text %d %d -text {%s} \
        -anchor w -font {{%s} -%d %s} -fill #%6.6x -tags %xL\n",
            glist_getcanvas(x->x_glist),
-           text_xpix(&x->x_obj, x->x_glist) + x->ldx, 
-           text_ypix(&x->x_obj, x->x_glist) + x->ldy,
+           text_xpix(&x->x_obj, x->x_glist) + x->lab_x, 
+           text_ypix(&x->x_obj, x->x_glist) + x->lab_y,
            x->lab->s_name,
            sys_font,
            x->lab_fs,
            sys_fontweight,
-           x->lcol,
+           x->lab_col,
            x);
 }
 
@@ -189,19 +190,39 @@ static void n_knob_draw_label(t_n_knob *x)
 static void n_knob_draw_num(t_n_knob *x)
 {
   char buf[32];
-  if (x->state >= 0)   sprintf(buf," %-f",x->state);
-  else                 sprintf(buf,"%-f",x->state);
-  buf[x->numw + 1] = '\0';
+  if (x->state >= 0)
+    {
+      if (x->numint)
+	{
+	  sprintf(buf," %-d",(int)x->state);
+	}
+      else
+	{
+	  sprintf(buf," %-f",x->state);
+	}
+    }
+  else
+    {
+      if (x->numint)
+	{
+	  sprintf(buf,"%-d",(int)x->state);
+	}
+      else
+	{
+	  sprintf(buf,"%-f",x->state);
+	}
+    }
+  buf[x->num_w + 1] = '\0';
   sys_vgui(".x%x.c create text %d %d -text {%s} \
            -anchor w -font {{%s} -%d %s} -fill #%6.6x -tags %xN\n",
            glist_getcanvas(x->x_glist),
-           text_xpix(&x->x_obj, x->x_glist) + x->ndx, 
-           text_ypix(&x->x_obj, x->x_glist) + x->ndy,
+           text_xpix(&x->x_obj, x->x_glist) + x->num_x, 
+           text_ypix(&x->x_obj, x->x_glist) + x->num_y,
            buf,
            sys_font,
            x->num_fs,
            sys_fontweight,
-           x->ncol,
+           x->num_col,
            x);
 }
 
@@ -233,8 +254,8 @@ static void n_knob_coords_label(t_n_knob *x)
   sys_vgui(".x%x.c coords %xL %d %d\n",
            glist_getcanvas(x->x_glist), 
            x,
-           text_xpix(&x->x_obj, x->x_glist) + x->ldx, 
-           text_ypix(&x->x_obj, x->x_glist) + x->ldy);
+           text_xpix(&x->x_obj, x->x_glist) + x->lab_x, 
+           text_ypix(&x->x_obj, x->x_glist) + x->lab_y);
 }
 
 // -------------------------------------------------------------------------- //
@@ -243,8 +264,8 @@ static void n_knob_coords_num(t_n_knob *x)
   sys_vgui(".x%x.c coords %xN %d %d\n",
            glist_getcanvas(x->x_glist), 
            x,
-           text_xpix(&x->x_obj, x->x_glist) + x->ndx, 
-           text_ypix(&x->x_obj, x->x_glist) + x->ndy);
+           text_xpix(&x->x_obj, x->x_glist) + x->num_x, 
+           text_ypix(&x->x_obj, x->x_glist) + x->num_y);
 }
 
 // -------------------------------------------------------------------------- //
@@ -402,6 +423,17 @@ static void n_knob_out(t_n_knob *x)
     }
 }
 
+
+// -------------------------------------------------------------------------- //
+// state
+//----------------------------------------------------------------------------//
+static void n_knob_calc_state(t_n_knob *x)
+{
+  x->state = ((x->count / x->resolution) * x->diff) + x->min;
+  x->state = quantize(x->state, x->step);
+}
+
+
 // -------------------------------------------------------------------------- //
 // motion
 //----------------------------------------------------------------------------//
@@ -418,11 +450,13 @@ static void n_knob_motion(t_n_knob *x, t_float dx, t_float dy)
       if (x->shift) dx = dx * 0.05;
       x->count += dx;
     }
-  AF_CLIP_MINMAX(0, x->resolution, x->count);
+  CLIP_MINMAX(0, x->resolution, x->count);
   
 
+  /* ? */
   x->state = ((x->count / x->resolution) * x->diff) + x->min;
   x->state = quantize(x->state, x->step);
+  /* ? */
 
   if (x->state != x->state_old)
     {
@@ -469,17 +503,17 @@ static int n_knob_newclick(t_gobj *z,
                  (t_floatarg)ypix);
     }
   return (1);
-  if (alt) {};
-  if (c) {};
+  if (alt) {}; // disable
+  if (c) {}; // disable
 }
 
 // -------------------------------------------------------------------------- //
 // methods
 // -------------------------------------------------------------------------- //
-static void n_knob_loadimage(t_n_knob *x, 
-                             t_symbol *filename,
-                             t_floatarg orientation,
-                             t_floatarg frames)
+static void n_knob_image(t_n_knob *x, 
+			 t_symbol *filename,
+			 t_floatarg orientation,
+			 t_floatarg frames)
 {
   if (filename->s_name[0] == '\0') 
     {
@@ -490,7 +524,7 @@ static void n_knob_loadimage(t_n_knob *x,
   x->img_h = -1;
   x->filename = filename;
   x->orientation = orientation;
-  AF_CLIP_MIN(1,frames);
+  CLIP_MIN(1,frames);
   x->frames = frames;
   sys_vgui("image create photo img%x\n",x);
   sys_vgui("if { [file exists {%s/%s}] == 1 } { \
@@ -519,6 +553,7 @@ static void n_knob_knobpar(t_n_knob* x,
                     t_floatarg default_state,
                     t_floatarg resolution)
 {
+  int i;
   t_float f;
   t_float maxstep;
 
@@ -538,13 +573,25 @@ static void n_knob_knobpar(t_n_knob* x,
   if      (step < 0) step = 0;
   else if (step > maxstep) step = maxstep;
 
-  if (x->minmaxdir)
+  // int or float
+  i = step;
+  f = step - i;
+  if (f == 0 && step > 0)
     {
-      AF_CLIP_MINMAX(x->max, x->min, default_state);
+      x->numint = 1;
     }
   else
     {
-      AF_CLIP_MINMAX(x->min, x->max, default_state);
+      x->numint = 0;
+    }
+
+  if (x->minmaxdir)
+    {
+      CLIP_MINMAX(x->max, x->min, default_state);
+    }
+  else
+    {
+      CLIP_MINMAX(x->min, x->max, default_state);
     }
 
   x->step = step;
@@ -553,13 +600,14 @@ static void n_knob_knobpar(t_n_knob* x,
 
   if (x->minmaxdir)
     {
-      AF_CLIP_MINMAX(x->max, x->min, x->state);
+      CLIP_MINMAX(x->max, x->min, x->state);
     }
   else
     {
-      AF_CLIP_MINMAX(x->min, x->max, x->state);
+      CLIP_MINMAX(x->min, x->max, x->state);
     }
 
+  /* ? */
   x->state = quantize(x->state, x->step);
   f = x->state - x->min;
   f = f / x->diff; 
@@ -572,6 +620,7 @@ static void n_knob_knobpar(t_n_knob* x,
       n_knob_draw_image(x);
       n_knob_bind_image(x);
     }
+  /* ? */
 }
 
 // -------------------------------------------------------------------------- //
@@ -638,16 +687,16 @@ static void n_knob_lab(t_n_knob* x, t_symbol *s)
 
 // -------------------------------------------------------------------------- //
 static void n_knob_labpar(t_n_knob* x, 
-                   t_floatarg lab_fs, 
-                   t_floatarg ldx,
-                   t_floatarg ldy,
-                   t_floatarg lcol)
+			  t_floatarg lab_fs, 
+			  t_floatarg lab_x,
+			  t_floatarg lab_y,
+			  t_floatarg lab_col)
 {
-  AF_CLIP_MINMAX(4, 256, lab_fs);
+  CLIP_MINMAX(4, 256, lab_fs);
   x->lab_fs = lab_fs;
-  x->ldx = ldx;
-  x->ldy = ldy;
-  x->lcol = pdcolor(lcol);
+  x->lab_x = lab_x;
+  x->lab_y = lab_y;
+  x->lab_col = pdcolor(lab_col);
   if (x->lab_vis)
     {
       n_knob_erase_label(x);
@@ -657,19 +706,19 @@ static void n_knob_labpar(t_n_knob* x,
 
 // -------------------------------------------------------------------------- //
 static void n_knob_numpar(t_n_knob* x, 
-                   t_floatarg numw, 
-                   t_floatarg num_fs, 
-                   t_floatarg ndx,
-                   t_floatarg ndy,
-                   t_floatarg ncol)
+			  t_floatarg num_w, 
+			  t_floatarg num_fs, 
+			  t_floatarg num_x,
+			  t_floatarg num_y,
+			  t_floatarg num_col)
 {
-  AF_CLIP_MINMAX(1, 8, numw);
-  x->numw = numw;
-  AF_CLIP_MINMAX(4, 256, num_fs);
+  CLIP_MINMAX(1, 32, num_w);
+  x->num_w = num_w;
+  CLIP_MINMAX(4, 256, num_fs);
   x->num_fs = num_fs;
-  x->ndx = ndx;
-  x->ndy = ndy;
-  x->ncol = pdcolor(ncol);
+  x->num_x = num_x;
+  x->num_y = num_y;
+  x->num_col = pdcolor(num_col);
   if (x->num_vis)
     {
       n_knob_erase_num(x);
@@ -678,10 +727,9 @@ static void n_knob_numpar(t_n_knob* x,
 }
 
 // -------------------------------------------------------------------------- //
-static void n_knob_numvis(t_n_knob* x, 
-                   t_floatarg num_vis)
+static void n_knob_numvis(t_n_knob* x, t_floatarg f)
 {
-  x->num_vis = num_vis;
+  x->num_vis = (f > 0);
   if (x->num_vis)
     {
       n_knob_erase_num(x);
@@ -699,12 +747,14 @@ static void n_knob_set(t_n_knob* x, t_floatarg f)
   x->state = f;
   if (x->minmaxdir)
     {
-      AF_CLIP_MINMAX(x->max, x->min, x->state);
+      CLIP_MINMAX(x->max, x->min, x->state);
     }
   else
     {
-      AF_CLIP_MINMAX(x->min, x->max, x->state);
+      CLIP_MINMAX(x->min, x->max, x->state);
     }
+
+  /* ? */
   x->state = quantize(x->state, x->step);
   f = x->state - x->min;
   f = f / x->diff; 
@@ -725,6 +775,7 @@ static void n_knob_set(t_n_knob* x, t_floatarg f)
         }
     }
   x->framepos_old = x->framepos;
+  /* ? */
 }
 
 // -------------------------------------------------------------------------- //
@@ -746,12 +797,14 @@ static void n_knob_float(t_n_knob* x, t_float f)
   x->state = f;
   if (x->minmaxdir)
     {
-      AF_CLIP_MINMAX(x->max, x->min, x->state);
+      CLIP_MINMAX(x->max, x->min, x->state);
     }
   else
     {
-      AF_CLIP_MINMAX(x->min, x->max, x->state);
+      CLIP_MINMAX(x->min, x->max, x->state);
     }
+
+  /* ? */
   x->state = quantize(x->state, x->step);
   f = x->state - x->min;
   f = f / x->diff; 
@@ -772,6 +825,8 @@ static void n_knob_float(t_n_knob* x, t_float f)
         }
     }
   x->framepos_old = x->framepos;
+  /* ? */
+
   n_knob_out(x);
 }
 
@@ -803,12 +858,14 @@ static void n_knob_size_callback(t_n_knob *x, t_float w, t_float h)
 
   x->img_w = w;
   x->img_h = h;
+
   // only vertical
   x->frame_w = x->img_w;
   x->frame_h = x->img_h / x->frames;
   x->frame_w_2 = x->frame_w / 2;
   x->frame_h_2 = x->frame_h / 2;
 
+  /* ? */
   x->framepos = (x->count / x->resolution) * (x->frames - 1);
   if(glist_isvisible(x->x_glist) && gobj_shouldvis((t_gobj *)x, x->x_glist))
     {
@@ -821,6 +878,7 @@ static void n_knob_size_callback(t_n_knob *x, t_float w, t_float h)
           n_knob_draw_frame(x);
         }
     }
+  /* ? */
 }
 
 // -------------------------------------------------------------------------- //
@@ -838,17 +896,29 @@ static void n_knob_double_callback(t_n_knob* x)
 static void n_knob_save(t_gobj *z, t_binbuf *b)
 {
   t_n_knob *x = (t_n_knob *)z;
-  char buf[128];
+  char buf[256];
   t_symbol *snd;
   t_symbol *rcv;
   t_symbol *lab;
-  t_symbol *lcol;
-  t_symbol *ncol;
-  sprintf(buf, "%s", x->snd->s_name); dollarinstring(buf); snd  = gensym(buf); 
-  sprintf(buf, "%s", x->rcv->s_name); dollarinstring(buf); rcv  = gensym(buf); 
-  sprintf(buf, "%s", x->lab->s_name); dollarinstring(buf); lab  = gensym(buf); 
-  sprintf(buf, "%d", x->lcol);                             lcol = gensym(buf);
-  sprintf(buf, "%d", x->ncol);                             ncol = gensym(buf);
+  t_symbol *lab_col;
+  t_symbol *num_col;
+  t_float state;
+  sprintf(buf, "%s", x->snd->s_name); dollarinstring(buf); snd = gensym(buf); 
+  sprintf(buf, "%s", x->rcv->s_name); dollarinstring(buf); rcv = gensym(buf); 
+  sprintf(buf, "%s", x->lab->s_name); dollarinstring(buf); lab = gensym(buf); 
+  sprintf(buf, "%d", x->lab_col);                          lab_col = gensym(buf);
+  sprintf(buf, "%d", x->num_col);                          num_col = gensym(buf);
+
+  if (x->init)
+    {
+      state = x->state;
+    }
+  else
+    {
+      state = x->default_state;
+    }
+  
+
 
   binbuf_addv(b, "ssiissiiffffisssiiisfiiiiiis", 
               gensym("#X"), 
@@ -868,17 +938,17 @@ static void n_knob_save(t_gobj *z, t_binbuf *b)
               rcv,
               lab,
               (int)x->lab_fs,
-              (int)x->ldx,
-              (int)x->ldy,
-              lcol,
-              x->state,
+              (int)x->lab_x,
+              (int)x->lab_y,
+              lab_col,
+              state,
               (int)x->init,
               (int)x->num_vis,
-              (int)x->numw,
+              (int)x->num_w,
               (int)x->num_fs,
-              (int)x->ndx,
-              (int)x->ndy,
-              ncol);
+              (int)x->num_x,
+              (int)x->num_y,
+              num_col);
   binbuf_addv(b, ";");
 }
 
@@ -907,18 +977,18 @@ static void n_knob_properties(t_gobj *z, t_glist *owner)
           rcv->s_name,
           lab->s_name,
           (int)x->lab_fs,
-          (int)x->ldx,
-          (int)x->ldy,
-          x->lcol,
+          (int)x->lab_x,
+          (int)x->lab_y,
+          x->lab_col,
           (int)x->init,
           (int)x->num_vis,
-          (int)x->numw,
+          (int)x->num_w,
           (int)x->num_fs,
-          (int)x->ndx,
-          (int)x->ndy,
-          x->ncol);
+          (int)x->num_x,
+          (int)x->num_y,
+          x->num_col);
   gfxstub_new(&x->x_obj.ob_pd, x, buf);
-  if (owner) {};
+  if (owner) {}; // disable
 }
 
 //----------------------------------------------------------------------------//
@@ -946,22 +1016,22 @@ static void n_knob_dialog(t_n_knob *x, t_symbol *s, int ac, t_atom *av)
   t_symbol *rcv         = mygetsymbolarg(9,ac,av);
   t_symbol *lab         = mygetsymbolarg(10,ac,av);
   int lab_fs            = atom_getfloatarg(11,ac,av);
-  int ldx               = atom_getfloatarg(12,ac,av);
-  int ldy               = atom_getfloatarg(13,ac,av);
-  int lcol              = mygetintarg(14,ac,av);
+  int lab_x             = atom_getfloatarg(12,ac,av);
+  int lab_y             = atom_getfloatarg(13,ac,av);
+  int lab_col           = mygetintarg(14,ac,av);
   int init              = atom_getfloatarg(15,ac,av);
   int num_vis           = atom_getfloatarg(16,ac,av);
-  int numw              = atom_getfloatarg(17,ac,av);
+  int num_w             = atom_getfloatarg(17,ac,av);
   int num_fs            = atom_getfloatarg(18,ac,av);
-  int ndx               = atom_getfloatarg(19,ac,av);
-  int ndy               = atom_getfloatarg(20,ac,av);
-  int ncol              = mygetintarg(21,ac,av);
+  int num_x             = atom_getfloatarg(19,ac,av);
+  int num_y             = atom_getfloatarg(20,ac,av);
+  int num_col           = mygetintarg(21,ac,av);
 
   if ((strcmp(x->filename->s_name, filename->s_name))
       || x->orientation != orientation
       || x->frames != frames)
     {
-      n_knob_loadimage(x, filename, orientation, frames);
+      n_knob_image(x, filename, orientation, frames);
     }
 
   if (x->min != min
@@ -989,15 +1059,15 @@ static void n_knob_dialog(t_n_knob *x, t_symbol *s, int ac, t_atom *av)
     }
 
   if (x->lab_fs != lab_fs
-      || x->ldx != ldx
-      || x->ldy != ldy
-      || x->lcol != lcol)
+      || x->lab_x != lab_x
+      || x->lab_y != lab_y
+      || x->lab_col != lab_col)
     {
-      AF_CLIP_MINMAX(4, 256, lab_fs);
+      CLIP_MINMAX(4, 256, lab_fs);
       x->lab_fs = lab_fs;
-      x->ldx = ldx;
-      x->ldy = ldy;
-      x->lcol = lcol;
+      x->lab_x = lab_x;
+      x->lab_y = lab_y;
+      x->lab_col = lab_col;
       if (x->lab_vis)
         {
           n_knob_erase_label(x);
@@ -1010,19 +1080,19 @@ static void n_knob_dialog(t_n_knob *x, t_symbol *s, int ac, t_atom *av)
       n_knob_init(x, init);
     }
 
-  if (x->numw != numw
+  if (x->num_w != num_w
       || x->num_fs != num_fs
-      || x->ndx != ndx
-      || x->ndy != ndy
-      || x->ncol != ncol)
+      || x->num_x != num_x
+      || x->num_y != num_y
+      || x->num_col != num_col)
     {
-      AF_CLIP_MINMAX(1, 8, numw);
-      x->numw = numw;
-      AF_CLIP_MINMAX(4, 256, num_fs);
+      CLIP_MINMAX(1, 8, num_w);
+      x->num_w = num_w;
+      CLIP_MINMAX(4, 256, num_fs);
       x->num_fs = num_fs;
-      x->ndx = ndx;
-      x->ndy = ndy;
-      x->ncol = ncol;
+      x->num_x = num_x;
+      x->num_y = num_y;
+      x->num_col = num_col;
       if (x->num_vis)
         {
           n_knob_erase_num(x);
@@ -1043,12 +1113,37 @@ static void n_knob_dialog(t_n_knob *x, t_symbol *s, int ac, t_atom *av)
 // -------------------------------------------------------------------------- //
 static void *n_knob_new(t_symbol *s, t_int ac, t_atom *av)
 {
+  char buf[MAXPDSTRING];
+
+  t_symbol *filename;
+  int orientation;
+  int frames;
+  t_float min;
+  t_float max;
+  t_float step;
+  t_float default_state;
+  int resolution;
+  t_symbol *snd;
+  t_symbol *rcv;
+  t_symbol *lab;
+  int lab_fs;
+  int lab_x;
+  int lab_y;
+  int lab_col;
+  t_float state;
+  int init;
+  int num_vis;
+  int num_w;
+  int num_fs;
+  int num_x;
+  int num_y;
+  int num_col;
+
   t_n_knob *x = (t_n_knob *)pd_new(n_knob_class);
   x->x_glist = (t_glist*) canvas_getcurrent();
   outlet_new(&x->x_obj, &s_float);
-  char buf[MAXPDSTRING];
   
-  // $0
+  // const
   x->dollarzero = canvas_getdollarzero();
   x->curdir = canvas_getcurrentdir();
   
@@ -1062,31 +1157,6 @@ static void *n_knob_new(t_symbol *s, t_int ac, t_atom *av)
   x->sel = 0;
   x->state_old = NEVERST;
   x->framepos_old = NEVERST;
-  
-  t_symbol *filename;
-  int orientation;
-  int frames;
-  t_float min;
-  t_float max;
-  t_float step;
-  t_float default_state;
-  int resolution;
-  t_symbol *snd;
-  t_symbol *rcv;
-  t_symbol *lab;
-  int lab_fs;
-  int ldx;
-  int ldy;
-  int lcol;
-  t_float state;
-  int init;
-  int num_vis;
-  int numw;
-  int num_fs;
-  int ndx;
-  int ndy;
-  int ncol;
-
   
   // arguments
   if (ac == 23
@@ -1126,17 +1196,17 @@ static void *n_knob_new(t_symbol *s, t_int ac, t_atom *av)
       rcv           = mygetsymbolarg(9,ac,av);
       lab           = mygetsymbolarg(10,ac,av);
       lab_fs        = atom_getfloatarg(11,ac,av);
-      ldx           = atom_getfloatarg(12,ac,av);
-      ldy           = atom_getfloatarg(13,ac,av);
-      lcol          = mygetintarg(14,ac,av);
+      lab_x         = atom_getfloatarg(12,ac,av);
+      lab_y         = atom_getfloatarg(13,ac,av);
+      lab_col       = mygetintarg(14,ac,av);
       state         = atom_getfloatarg(15,ac,av);
       init          = atom_getfloatarg(16,ac,av);
       num_vis       = atom_getfloatarg(17,ac,av);
-      numw          = atom_getfloatarg(18,ac,av);
+      num_w         = atom_getfloatarg(18,ac,av);
       num_fs        = atom_getfloatarg(19,ac,av);
-      ndx           = atom_getfloatarg(20,ac,av);
-      ndy           = atom_getfloatarg(21,ac,av);
-      ncol          = mygetintarg(22,ac,av);
+      num_x         = atom_getfloatarg(20,ac,av);
+      num_y         = atom_getfloatarg(21,ac,av);
+      num_col       = mygetintarg(22,ac,av);
     }
   else
     {
@@ -1152,21 +1222,20 @@ static void *n_knob_new(t_symbol *s, t_int ac, t_atom *av)
       rcv           = gensym("empty");
       lab           = gensym("empty");
       lab_fs        = 11;
-      ldx           = 0;
-      ldy           = -8;
-      lcol          = pdcolor(22);
+      lab_x         = 0;
+      lab_y         = -8;
+      lab_col       = pdcolor(22);
       state         = 0.0;
       init          = NOINIT;
       num_vis       = 0;
-      numw          = 5;
+      num_w         = 5;
       num_fs        = 11;
-      ndx           = 0;
-      ndy           = 42;
-      ncol          = pdcolor(22);
+      num_x         = 0;
+      num_y         = 42;
+      num_col       = pdcolor(22);
     }
   
-  n_knob_knobpar(x, min, max, step, default_state, resolution);
-
+  // label
   if (!(strcmp(lab->s_name, "empty")))
     {
       x->lab = lab;
@@ -1177,32 +1246,38 @@ static void *n_knob_new(t_symbol *s, t_int ac, t_atom *av)
       x->lab = lab;
       x->lab_vis = 1;
     }
-  AF_CLIP_MINMAX(4, 256, lab_fs);
+  CLIP_MINMAX(4, 256, lab_fs);
   x->lab_fs = lab_fs;
-  x->ldx = ldx;
-  x->ldy = ldy;
-  x->lcol = lcol;
+  x->lab_x = lab_x;
+  x->lab_y = lab_y;
+  x->lab_col = lab_col;
 
+  // numeric
   x->num_vis = num_vis;
-  AF_CLIP_MINMAX(1, 8, numw);
-  x->numw = numw;
-  AF_CLIP_MINMAX(4, 256, num_fs);
+  CLIP_MINMAX(1, 8, num_w);
+  x->num_w = num_w;
+  CLIP_MINMAX(4, 256, num_fs);
   x->num_fs = num_fs;
-  x->ndx = ndx;
-  x->ndy = ndy;
-  x->ncol = ncol;
+  x->num_x = num_x;
+  x->num_y = num_y;
+  x->num_col = num_col;
 
-  n_knob_set(x, state);
-  n_knob_init(x, init);
-  n_knob_loadimage(x, filename, orientation, frames);
-
+  // snd rcv
   x->snd_able = 0;
   x->rcv_able = 0;
   n_knob_snd(x, snd);
   n_knob_rcv(x, rcv);
 
+  // knob
+  n_knob_knobpar(x, min, max, step, default_state, resolution);
+  n_knob_init(x, init);
+  n_knob_set(x, state);
+
+  // image
+  n_knob_image(x, filename, orientation, frames);
+
   return (x);
-  if (s) {};
+  if (s) {}; // disable
 }
 
 
@@ -1219,50 +1294,34 @@ static void n_knob_free(t_n_knob* x)
 // -------------------------------------------------------------------------- //
 void n_knob_setup(void)
 {
-  n_knob_class = class_new(gensym("n_knob"),(t_newmethod)n_knob_new,
-                           (t_method)n_knob_free,sizeof(t_n_knob),0,A_GIMME,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_loadimage,gensym("loadimage"),
-                  A_SYMBOL,A_FLOAT,A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_knobpar,gensym("knobpar"),
-                  A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_snd,gensym("send"),
-                  A_SYMBOL,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_rcv,gensym("receive"),
-                  A_SYMBOL,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_lab,gensym("label"),
-                  A_SYMBOL,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_labpar,gensym("labpar"),
-                  A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_numpar,gensym("numpar"),
-                  A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_numvis,gensym("numvis"),
-                  A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_set,gensym("set"),
-                  A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_init,gensym("init"),
-                  A_FLOAT,0);
+  n_knob_class = class_new(gensym("n_knob"),(t_newmethod)n_knob_new,(t_method)n_knob_free,sizeof(t_n_knob),0,A_GIMME,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_image,gensym("image"),A_SYMBOL,A_FLOAT,A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_knobpar,gensym("knobpar"),A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_snd,gensym("send"),A_SYMBOL,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_rcv,gensym("receive"),A_SYMBOL,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_lab,gensym("label"),A_SYMBOL,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_labpar,gensym("labpar"),A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_numpar,gensym("numpar"),A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_numvis,gensym("numvis"),A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_set,gensym("set"),A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_init,gensym("init"),A_FLOAT,0);
   class_addbang(n_knob_class, (t_method)n_knob_bang);
   class_addfloat(n_knob_class, (t_method)n_knob_float);
   class_addmethod(n_knob_class,(t_method)n_knob_default,gensym("default"),0);
-  class_addmethod(n_knob_class,(t_method)n_knob_size_callback, gensym("_size"),
-                  A_FLOAT,A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_double_callback,gensym("_double"),
-                  0);
-  class_addmethod(n_knob_class, (t_method)n_knob_loadbang, gensym("loadbang"),
-                  A_DEFFLOAT, 0);
-  class_addmethod(n_knob_class, (t_method)n_knob_dialog, gensym("dialog"),
-                  A_GIMME, 0);
-  n_knob_widgetbehavior.w_getrectfn  = n_knob_getrect;
-  n_knob_widgetbehavior.w_displacefn = n_knob_displace;
-  n_knob_widgetbehavior.w_selectfn   = n_knob_select;
-  n_knob_widgetbehavior.w_deletefn   = n_knob_delete;
-  n_knob_widgetbehavior.w_visfn      = n_knob_vis;
-  n_knob_widgetbehavior.w_clickfn    = n_knob_newclick;
+  class_addmethod(n_knob_class,(t_method)n_knob_size_callback, gensym("_size"),A_FLOAT,A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_double_callback,gensym("_double"),0);
+  class_addmethod(n_knob_class, (t_method)n_knob_loadbang, gensym("loadbang"),A_DEFFLOAT, 0);
+  class_addmethod(n_knob_class, (t_method)n_knob_dialog, gensym("dialog"),A_GIMME, 0);
+  n_knob_widgetbehavior.w_getrectfn=n_knob_getrect;
+  n_knob_widgetbehavior.w_displacefn=n_knob_displace;
+  n_knob_widgetbehavior.w_selectfn=n_knob_select;
+  n_knob_widgetbehavior.w_deletefn=n_knob_delete;
+  n_knob_widgetbehavior.w_visfn=n_knob_vis;
+  n_knob_widgetbehavior.w_clickfn=n_knob_newclick;
   class_setsavefn(n_knob_class,&n_knob_save);
   class_setwidget(n_knob_class,&n_knob_widgetbehavior);
   class_setpropertiesfn(n_knob_class, n_knob_properties);
-  sys_vgui("eval [read [open {%s/n_knob.tcl}]]\n",
-           n_knob_class->c_externdir->s_name);
+  sys_vgui("eval [read [open {%s/n_knob.tcl}]]\n",n_knob_class->c_externdir->s_name);
   extdir = n_knob_class->c_externdir;
 }
 
