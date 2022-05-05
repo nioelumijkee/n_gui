@@ -9,7 +9,7 @@ window or, f 64;
 Knob 11 0 -8 0 0 0 1 3 11 -4 38 0;
 #N canvas 49 160 513 399 label 0;
 #X obj 129 187 n_knob default.gif 1 33 0 1 0.01 0.5 256 empty empty
-Knob 11 15 -8 0 0 0 0 5 11 0 42 0;
+Knob 11 15 -8 0 0.5 0 0 5 11 0 42 0;
 #X msg 129 47 label Knob;
 #X msg 136 70 label empty;
 #X msg 158 113 labpar 11 15 -8 22;
@@ -38,8 +38,8 @@ Knob 11 15 -8 0 0 0 0 5 11 0 42 0;
 #X connect 4 0 0 0;
 #X restore 415 128 pd label;
 #N canvas 232 95 557 472 image 0;
-#X obj 101 250 n_knob ex.slider.50.png 0 50 0 1 0.01 0.5 256 empty
-empty empty 11 0 -8 0 0.45 0 0 5 11 0 42 0;
+#X obj 101 250 n_knob default.gif 0 33 0 1 0.01 0.5 256 empty empty
+empty 11 0 -8 0 0.5 0 0 5 11 0 42 0;
 #X text 90 30 When you download the image file \, n_knob searches in
 two places. This is the current directory \, and the directory where
 the library is located. The image must have a supported format(gif
@@ -76,7 +76,7 @@ vertical orientation(0 - horizontal \, 1 - vertical).;
 #X connect 13 0 0 0;
 #X connect 14 0 0 0;
 #X restore 271 88 pd image \, frames and orientation;
-#N canvas 149 100 619 388 knob 0;
+#N canvas 446 207 619 388 knob 0;
 #X text 78 35 knobpar <float> <float> <float> <float> <float> - set
 knob parametres:, f 77;
 #X text 132 46 |, f 68;
@@ -104,17 +104,19 @@ knob parametres:, f 77;
 #X text 78 123 resolution - number of pixels that need to be leaning
 with the mouse, f 77;
 #X text 78 134 to get the entire state range., f 77;
-#X obj 161 274 n_knob default.gif 1 33 -1 1 0 0 128 empty empty empty
-11 0 -8 0 -0.453125 0 1 5 11 8 42 0;
-#X msg 161 185 knobpar -1 1 0 0 128;
+#X obj 161 274 n_knob default.gif 1 33 100 -200 5 50 256 empty empty
+empty 11 0 -8 0 50 0 1 5 11 8 42 0;
 #X floatatom 161 338 5 0 0 0 - - - 0;
 #X msg 171 205 knobpar 100 -200 5 50 256;
-#X connect 24 0 26 0;
-#X connect 25 0 24 0;
-#X connect 27 0 24 0;
+#X text 324 182 float;
+#X text 343 205 int;
+#X msg 161 185 knobpar -5 5 0 0 128;
+#X connect 24 0 25 0;
+#X connect 26 0 24 0;
+#X connect 29 0 24 0;
 #X restore 356 168 pd knob parametres;
 #N canvas 127 202 566 379 numeric 0;
-#X obj 49 188 n_knob default.gif 1 33 -1 1 0.02 0 256 empty empty empty
+#X obj 49 188 n_knob default.gif 1 33 -1 1 0 0 256 empty empty empty
 11 0 -4 65793 0 0 1 4 14 -12 40 0;
 #X obj 49 15 tgl 15 1 empty empty empty 17 7 0 10 #fcfcfc #000000 #000000
 1 1;
@@ -198,13 +200,13 @@ Amplitude 11 0 -8 0 0.57 1 0 5 11 0 42 0;
 #X restore 28 253 pd example: default.gif;
 #N canvas 184 98 450 300 example: 0;
 #X obj 122 142 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
-empty 0 12 8 -8 65793 0.06 0 1 4 10 -8 32 6316128;
+empty 0 12 8 -8 65793 0.5 0 1 4 10 -8 32 6316128;
 #X obj 162 142 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
-empty 1 12 8 -8 65793 0.06 0 1 4 10 -8 32 6316128;
+empty 1 12 8 -8 65793 0.5 0 1 4 10 -8 32 6316128;
 #X obj 202 142 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
-empty 2 12 8 -8 65793 0.13 0 1 4 10 -8 32 6316128;
+empty 2 12 8 -8 65793 0.5 0 1 4 10 -8 32 6316128;
 #X obj 242 142 n_knob knob_24x24x65.png 1 65 0 1 0.01 0.5 256 empty
-empty 3 12 8 -8 65793 0.89 0 1 4 10 -8 32 6316128;
+empty 3 12 8 -8 65793 0.5 0 1 4 10 -8 32 6316128;
 #X floatatom 68 166 5 0 0 0 - - - 0;
 #X floatatom 319 166 5 0 0 0 - - - 0;
 #X connect 0 0 4 0;
@@ -217,7 +219,7 @@ empty 3 12 8 -8 65793 0.89 0 1 4 10 -8 32 6316128;
 , f 77;
 #X msg 105 204 send a;
 #X obj 105 280 n_knob default.gif 1 33 0 1 0.01 0.5 256 b empty empty
-11 0 -8 0 0.69 0 0 5 11 0 42 0;
+11 0 -8 0 0.5 0 0 5 11 0 42 0;
 #X obj 208 272 r a;
 #X floatatom 208 295 5 0 0 0 - - - 0;
 #X floatatom 258 295 5 0 0 0 - - - 0;
@@ -225,7 +227,7 @@ empty 3 12 8 -8 65793 0.89 0 1 4 10 -8 32 6316128;
 #X msg 115 224 send b;
 #X msg 125 244 send empty;
 #X obj 345 280 n_knob default.gif 1 33 0 1 0.01 0.5 256 empty empty
-empty 11 0 -8 0 0.69 0 0 5 11 0 42 0;
+empty 11 0 -8 0 0.5 0 0 5 11 0 42 0;
 #X msg 345 204 receive a;
 #X msg 355 224 receive b;
 #X msg 365 244 receive empty;
@@ -246,22 +248,27 @@ empty 11 0 -8 0 0.69 0 0 5 11 0 42 0;
 #X text 38 103 init <float> - if > 0 \, on load n_knob send to outlet
 state value., f 65;
 #X obj 140 236 n_knob default.gif 1 33 0 127 1 64 256 empty empty empty
-11 0 -8 0 64 1 0 5 11 0 42 0;
-#X floatatom 140 166 5 0 0 0 - - - 0;
+11 0 -8 0 64 0 0 5 11 0 42 0;
+#X floatatom 97 166 5 0 0 0 - - - 0;
 #X floatatom 140 313 5 0 0 0 - - - 0;
-#X obj 95 178 bng 15 250 50 0 empty empty empty 17 7 0 10 #fcfcfc #000000
-#000000;
+#X obj 140 168 bng 15 250 50 0 empty empty empty 17 7 0 10 #fcfcfc
+#000000 #000000;
 #X obj 160 288 print;
 #X msg 186 168 default;
-#X msg 244 185 init 0;
-#X msg 244 205 init 1;
+#X floatatom 48 143 5 0 0 0 - - - 0;
+#X msg 48 165 set \$1;
+#X msg 253 192 init \$1;
+#X obj 253 173 tgl 15 0 empty empty empty 17 7 0 10 #fcfcfc #000000
+#000000 0 1;
 #X connect 5 0 7 0;
 #X connect 5 0 9 0;
 #X connect 6 0 5 0;
 #X connect 8 0 5 0;
 #X connect 10 0 5 0;
-#X connect 11 0 5 0;
+#X connect 11 0 12 0;
 #X connect 12 0 5 0;
+#X connect 13 0 5 0;
+#X connect 14 0 13 0;
 #X restore 283 108 pd set/bang/float/default/init;
 #N canvas 0 16 523 297 mouse 0;
 #X text 58 59 double click;

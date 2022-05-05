@@ -50,6 +50,7 @@ typedef struct _n_knob
   int dollarzero;
   t_symbol *curdir;
 
+  /* par */
   t_symbol *filename;
   int orientation;
   int frames;
@@ -74,12 +75,15 @@ typedef struct _n_knob
   int num_y;
   int num_col;
 
+  /* image */
   int img_w;
   int img_h;
   int frame_w;
   int frame_h;
   int frame_w_2;
   int frame_h_2;
+
+  /* internal */
   t_float state_old;
   t_float diff;
   int minmaxdir;
@@ -90,6 +94,9 @@ typedef struct _n_knob
   t_float count;
   int numint;
   int lab_vis;
+  int num_disp;
+
+  /* snd rcv */
   t_symbol *snd_real;
   int snd_able;
   t_symbol *rcv_real;
@@ -98,32 +105,12 @@ typedef struct _n_knob
 
 
 // -------------------------------------------------------------------------- //
-t_float quantize(t_float f, t_float step)
-{
-  int i;
-  if (step > 0)
-    {
-      if (f > 0)
-        {
-          i = (f / step) + 0.49999;
-          f = i * step;
-        }
-      else
-        {
-          i = (f / step) - 0.49999;
-          f = i * step;
-        }
-    }
-  return (f);
-}
-
-// -------------------------------------------------------------------------- //
 // sys_vgui
 // -------------------------------------------------------------------------- //
 void n_knob_bind_image(t_n_knob *x)
 {
   if (x->img_w == -1) return;
-  sys_vgui(".x%x.c bind %xI <Double-Button-1> \
+  sys_vgui(".x%x.c bind I%x <Double-Button-1> \
            {pdsend [concat %s _double \\;]}\n", 
            glist_getcanvas(x->x_glist), 
            x, 
@@ -149,7 +136,7 @@ static void n_knob_draw_image(t_n_knob *x)
            ofs_y0,
            ofs_x1,
            ofs_y1);
-  sys_vgui(".x%x.c create image %d %d -image img%x -tags %xI\n", 
+  sys_vgui(".x%x.c create image %d %d -image img%x -tags I%x\n", 
            glist_getcanvas(x->x_glist),
            text_xpix(&x->x_obj, x->x_glist) + x->frame_w_2, 
            text_ypix(&x->x_obj, x->x_glist) + x->frame_h_2,
@@ -161,7 +148,7 @@ static void n_knob_draw_image(t_n_knob *x)
 static void n_knob_draw_frame(t_n_knob *x)
 {
   sys_vgui(".x%x.c create rectangle %d %d %d %d \
-           -tags %xF -outline blue\n",
+           -tags F%x -outline blue\n",
            glist_getcanvas(x->x_glist),
            text_xpix(&x->x_obj, x->x_glist) - 1, 
            text_ypix(&x->x_obj, x->x_glist) - 1,
@@ -174,7 +161,7 @@ static void n_knob_draw_frame(t_n_knob *x)
 static void n_knob_draw_label(t_n_knob *x)
 {
   sys_vgui(".x%x.c create text %d %d -text {%s} \
-       -anchor w -font {{%s} -%d %s} -fill #%6.6x -tags %xL\n",
+       -anchor w -font {{%s} -%d %s} -fill #%6.6x -tags L%x\n",
            glist_getcanvas(x->x_glist),
            text_xpix(&x->x_obj, x->x_glist) + x->lab_x, 
            text_ypix(&x->x_obj, x->x_glist) + x->lab_y,
@@ -189,6 +176,7 @@ static void n_knob_draw_label(t_n_knob *x)
 // -------------------------------------------------------------------------- //
 static void n_knob_draw_num(t_n_knob *x)
 {
+  x->num_disp = 1;
   char buf[32];
   if (x->state >= 0)
     {
@@ -214,7 +202,7 @@ static void n_knob_draw_num(t_n_knob *x)
     }
   buf[x->num_w + 1] = '\0';
   sys_vgui(".x%x.c create text %d %d -text {%s} \
-           -anchor w -font {{%s} -%d %s} -fill #%6.6x -tags %xN\n",
+           -anchor w -font {{%s} -%d %s} -fill #%6.6x -tags N%x\n",
            glist_getcanvas(x->x_glist),
            text_xpix(&x->x_obj, x->x_glist) + x->num_x, 
            text_ypix(&x->x_obj, x->x_glist) + x->num_y,
@@ -229,7 +217,7 @@ static void n_knob_draw_num(t_n_knob *x)
 // -------------------------------------------------------------------------- //
 static void n_knob_coords_image(t_n_knob *x)
 {
-  sys_vgui(".x%x.c coords %xI %d %d\n",
+  sys_vgui(".x%x.c coords I%x %d %d\n",
            glist_getcanvas(x->x_glist), 
            x,
            text_xpix(&x->x_obj, x->x_glist) + x->frame_w_2, 
@@ -239,7 +227,7 @@ static void n_knob_coords_image(t_n_knob *x)
 // -------------------------------------------------------------------------- //
 static void n_knob_coords_frame(t_n_knob *x)
 {
-  sys_vgui(".x%x.c coords %xF %d %d %d %d\n",
+  sys_vgui(".x%x.c coords F%x %d %d %d %d\n",
            glist_getcanvas(x->x_glist), 
            x,
            text_xpix(&x->x_obj, x->x_glist) - 1, 
@@ -251,7 +239,7 @@ static void n_knob_coords_frame(t_n_knob *x)
 // -------------------------------------------------------------------------- //
 static void n_knob_coords_label(t_n_knob *x)
 {
-  sys_vgui(".x%x.c coords %xL %d %d\n",
+  sys_vgui(".x%x.c coords L%x %d %d\n",
            glist_getcanvas(x->x_glist), 
            x,
            text_xpix(&x->x_obj, x->x_glist) + x->lab_x, 
@@ -261,7 +249,7 @@ static void n_knob_coords_label(t_n_knob *x)
 // -------------------------------------------------------------------------- //
 static void n_knob_coords_num(t_n_knob *x)
 {
-  sys_vgui(".x%x.c coords %xN %d %d\n",
+  sys_vgui(".x%x.c coords N%x %d %d\n",
            glist_getcanvas(x->x_glist), 
            x,
            text_xpix(&x->x_obj, x->x_glist) + x->num_x, 
@@ -272,7 +260,7 @@ static void n_knob_coords_num(t_n_knob *x)
 static void n_knob_erase_image(t_n_knob *x)
 {
   if (x->img_w == -1) return;
-  sys_vgui(".x%x.c delete %xI\n",
+  sys_vgui(".x%x.c delete I%x\n",
            glist_getcanvas(x->x_glist), 
            x);
   sys_vgui("image delete img%x\n",
@@ -282,7 +270,7 @@ static void n_knob_erase_image(t_n_knob *x)
 // -------------------------------------------------------------------------- //
 static void n_knob_erase_frame(t_n_knob *x)
 {
-  sys_vgui(".x%x.c delete %xF\n",
+  sys_vgui(".x%x.c delete F%x\n",
            glist_getcanvas(x->x_glist), 
            x);
 }
@@ -290,7 +278,7 @@ static void n_knob_erase_frame(t_n_knob *x)
 // -------------------------------------------------------------------------- //
 static void n_knob_erase_label(t_n_knob *x)
 {
-  sys_vgui(".x%x.c delete %xL\n",
+  sys_vgui(".x%x.c delete L%x\n",
            glist_getcanvas(x->x_glist), 
            x);
 }
@@ -298,7 +286,9 @@ static void n_knob_erase_label(t_n_knob *x)
 // -------------------------------------------------------------------------- //
 static void n_knob_erase_num(t_n_knob *x)
 {
-  sys_vgui(".x%x.c delete %xN\n",
+  if (x->num_disp == 0) return;
+  x->num_disp = 0;
+  sys_vgui(".x%x.c delete N%x\n",
            glist_getcanvas(x->x_glist), 
            x);
 }
@@ -412,6 +402,14 @@ static void n_knob_vis(t_gobj *z, t_glist *glist, int vis)
 }
 
 // -------------------------------------------------------------------------- //
+// test visible
+// -------------------------------------------------------------------------- //
+int visible(t_n_knob *x)
+{
+  return(glist_isvisible(x->x_glist) && gobj_shouldvis((t_gobj *)x, x->x_glist));
+}
+
+// -------------------------------------------------------------------------- //
 // out
 //----------------------------------------------------------------------------//
 static void n_knob_out(t_n_knob *x)
@@ -425,14 +423,57 @@ static void n_knob_out(t_n_knob *x)
 
 
 // -------------------------------------------------------------------------- //
-// state
+// calc
+// -------------------------------------------------------------------------- //
+t_float quantize(t_float f, t_float step)
+{
+  int i;
+  if (step > 0)
+    {
+      if (f > 0)
+        {
+          i = (f / step) + 0.49999;
+          f = i * step;
+        }
+      else
+        {
+          i = (f / step) - 0.49999;
+          f = i * step;
+        }
+    }
+  return (f);
+}
+
 //----------------------------------------------------------------------------//
-static void n_knob_calc_state(t_n_knob *x)
+static void n_knob_calc_state_from_count(t_n_knob *x)
 {
   x->state = ((x->count / x->resolution) * x->diff) + x->min;
   x->state = quantize(x->state, x->step);
 }
 
+//----------------------------------------------------------------------------//
+static void n_knob_calc_state_from_float(t_n_knob *x, t_float f)
+{
+  x->state = f;
+  if (x->minmaxdir)
+    {
+      CLIP_MINMAX(x->max, x->min, x->state);
+    }
+  else
+    {
+      CLIP_MINMAX(x->min, x->max, x->state);
+    }
+  x->state = quantize(x->state, x->step);
+}
+
+//----------------------------------------------------------------------------//
+static void n_knob_calc_count_from_state(t_n_knob *x)
+{
+  t_float f = x->state - x->min;
+  f = f / x->diff; 
+  x->count = f * x->resolution;
+  x->framepos = (x->count / x->resolution) * (x->frames - 1);
+}
 
 // -------------------------------------------------------------------------- //
 // motion
@@ -451,17 +492,12 @@ static void n_knob_motion(t_n_knob *x, t_float dx, t_float dy)
       x->count += dx;
     }
   CLIP_MINMAX(0, x->resolution, x->count);
-  
 
-  /* ? */
-  x->state = ((x->count / x->resolution) * x->diff) + x->min;
-  x->state = quantize(x->state, x->step);
-  /* ? */
-
+  n_knob_calc_state_from_count(x);
   if (x->state != x->state_old)
     {
       x->framepos = (x->count / x->resolution) * (x->frames - 1);
-      if(glist_isvisible(x->x_glist) && gobj_shouldvis((t_gobj *)x, x->x_glist))
+      if(visible(x))
         {
           if (x->framepos != x->framepos_old)
             {
@@ -476,9 +512,9 @@ static void n_knob_motion(t_n_knob *x, t_float dx, t_float dy)
             }
         }
       x->framepos_old = x->framepos;
+      x->state_old = x->state;
       n_knob_out(x);
     }
-  x->state_old = x->state;
 }
 
 // -------------------------------------------------------------------------- //
@@ -544,14 +580,13 @@ pdsend [concat %s _size -1 -1]}\n",
            x->x_bindname->s_name);
 }
 
-
 // -------------------------------------------------------------------------- //
-static void n_knob_knobpar(t_n_knob* x, 
-                    t_floatarg min, 
-                    t_floatarg max,
-                    t_floatarg step,
-                    t_floatarg default_state,
-                    t_floatarg resolution)
+static void n_knob_knobpar_set(t_n_knob* x, 
+			       t_floatarg min, 
+			       t_floatarg max,
+			       t_floatarg step,
+			       t_floatarg default_state,
+			       t_floatarg resolution)
 {
   int i;
   t_float f;
@@ -598,29 +633,30 @@ static void n_knob_knobpar(t_n_knob* x,
   x->default_state = default_state;
   x->resolution = resolution;
 
-  if (x->minmaxdir)
-    {
-      CLIP_MINMAX(x->max, x->min, x->state);
-    }
-  else
-    {
-      CLIP_MINMAX(x->min, x->max, x->state);
-    }
+  n_knob_calc_state_from_float(x, x->state);
+  n_knob_calc_count_from_state(x);
+}
 
-  /* ? */
-  x->state = quantize(x->state, x->step);
-  f = x->state - x->min;
-  f = f / x->diff; 
-
-  x->count = f * x->resolution;
-  x->framepos = (x->count / x->resolution) * (x->frames - 1);
-  if(glist_isvisible(x->x_glist) && gobj_shouldvis((t_gobj *)x, x->x_glist))
+// -------------------------------------------------------------------------- //
+static void n_knob_knobpar(t_n_knob* x, 
+			   t_floatarg min, 
+			   t_floatarg max,
+			   t_floatarg step,
+			   t_floatarg default_state,
+			   t_floatarg resolution)
+{
+  n_knob_knobpar_set(x, min, max, step, default_state, resolution);
+  if(visible(x))
     {
       n_knob_erase_image(x);
       n_knob_draw_image(x);
       n_knob_bind_image(x);
+      /* if (x->num_vis) */
+      /* 	{ */
+      /* 	  n_knob_erase_num(x); */
+      /* 	  n_knob_draw_num(x); */
+      /* 	} */
     }
-  /* ? */
 }
 
 // -------------------------------------------------------------------------- //
@@ -668,21 +704,47 @@ static void n_knob_rcv(t_n_knob* x, t_symbol *s)
 }
 
 // -------------------------------------------------------------------------- //
-static void n_knob_lab(t_n_knob* x, t_symbol *s)
+static void n_knob_lab_set(t_n_knob* x, t_symbol *s)
 {
   if (!(strcmp(s->s_name, "empty")))
     {
       x->lab = s;
       x->lab_vis = 0;
-      n_knob_erase_label(x);
     }
   else
     {
       x->lab = s;
       x->lab_vis = 1;
+    }
+}
+
+// -------------------------------------------------------------------------- //
+static void n_knob_lab(t_n_knob* x, t_symbol *s)
+{
+  n_knob_lab_set(x, s);
+  if (x->lab_vis == 0)
+    {
+      n_knob_erase_label(x);
+    }
+  else
+    {
       n_knob_erase_label(x);
       n_knob_draw_label(x);
     }
+}
+
+// -------------------------------------------------------------------------- //
+static void n_knob_labpar_set(t_n_knob* x, 
+			      t_floatarg lab_fs, 
+			      t_floatarg lab_x,
+			      t_floatarg lab_y,
+			      t_floatarg lab_col)
+{
+  CLIP_MINMAX(4, 256, lab_fs);
+  x->lab_fs = lab_fs;
+  x->lab_x = lab_x;
+  x->lab_y = lab_y;
+  x->lab_col = pdcolor(lab_col);
 }
 
 // -------------------------------------------------------------------------- //
@@ -692,16 +754,29 @@ static void n_knob_labpar(t_n_knob* x,
 			  t_floatarg lab_y,
 			  t_floatarg lab_col)
 {
-  CLIP_MINMAX(4, 256, lab_fs);
-  x->lab_fs = lab_fs;
-  x->lab_x = lab_x;
-  x->lab_y = lab_y;
-  x->lab_col = pdcolor(lab_col);
+  n_knob_labpar_set(x, lab_fs, lab_x, lab_y, lab_col);
   if (x->lab_vis)
     {
       n_knob_erase_label(x);
       n_knob_draw_label(x);
     }
+}
+
+// -------------------------------------------------------------------------- //
+static void n_knob_numpar_set(t_n_knob* x, 
+			      t_floatarg num_w, 
+			      t_floatarg num_fs, 
+			      t_floatarg num_x,
+			      t_floatarg num_y,
+			      t_floatarg num_col)
+{
+  CLIP_MINMAX(1, 32, num_w);
+  x->num_w = num_w;
+  CLIP_MINMAX(4, 256, num_fs);
+  x->num_fs = num_fs;
+  x->num_x = num_x;
+  x->num_y = num_y;
+  x->num_col = pdcolor(num_col);
 }
 
 // -------------------------------------------------------------------------- //
@@ -712,13 +787,7 @@ static void n_knob_numpar(t_n_knob* x,
 			  t_floatarg num_y,
 			  t_floatarg num_col)
 {
-  CLIP_MINMAX(1, 32, num_w);
-  x->num_w = num_w;
-  CLIP_MINMAX(4, 256, num_fs);
-  x->num_fs = num_fs;
-  x->num_x = num_x;
-  x->num_y = num_y;
-  x->num_col = pdcolor(num_col);
+  n_knob_numpar_set(x, num_w, num_fs, num_x, num_y, num_col);
   if (x->num_vis)
     {
       n_knob_erase_num(x);
@@ -727,9 +796,15 @@ static void n_knob_numpar(t_n_knob* x,
 }
 
 // -------------------------------------------------------------------------- //
-static void n_knob_numvis(t_n_knob* x, t_floatarg f)
+static void n_knob_numvis_set(t_n_knob* x, t_floatarg f)
 {
   x->num_vis = (f > 0);
+}
+
+// -------------------------------------------------------------------------- //
+static void n_knob_numvis(t_n_knob* x, t_floatarg f)
+{
+  n_knob_numvis_set(x, f);
   if (x->num_vis)
     {
       n_knob_erase_num(x);
@@ -744,23 +819,9 @@ static void n_knob_numvis(t_n_knob* x, t_floatarg f)
 // -------------------------------------------------------------------------- //
 static void n_knob_set(t_n_knob* x, t_floatarg f)
 {
-  x->state = f;
-  if (x->minmaxdir)
-    {
-      CLIP_MINMAX(x->max, x->min, x->state);
-    }
-  else
-    {
-      CLIP_MINMAX(x->min, x->max, x->state);
-    }
-
-  /* ? */
-  x->state = quantize(x->state, x->step);
-  f = x->state - x->min;
-  f = f / x->diff; 
-  x->count = f * x->resolution;
-  x->framepos = (x->count / x->resolution) * (x->frames - 1);
-  if(glist_isvisible(x->x_glist) && gobj_shouldvis((t_gobj *)x, x->x_glist))
+  n_knob_calc_state_from_float(x, f);
+  n_knob_calc_count_from_state(x);
+  if(visible(x))
     {
       if (x->framepos != x->framepos_old)
         {
@@ -775,7 +836,6 @@ static void n_knob_set(t_n_knob* x, t_floatarg f)
         }
     }
   x->framepos_old = x->framepos;
-  /* ? */
 }
 
 // -------------------------------------------------------------------------- //
@@ -794,30 +854,16 @@ static void n_knob_bang(t_n_knob* x)
 // -------------------------------------------------------------------------- //
 static void n_knob_float(t_n_knob* x, t_float f)
 {
-  x->state = f;
-  if (x->minmaxdir)
-    {
-      CLIP_MINMAX(x->max, x->min, x->state);
-    }
-  else
-    {
-      CLIP_MINMAX(x->min, x->max, x->state);
-    }
-
-  /* ? */
-  x->state = quantize(x->state, x->step);
-  f = x->state - x->min;
-  f = f / x->diff; 
-  x->count = f * x->resolution;
-  x->framepos = (x->count / x->resolution) * (x->frames - 1);
-  if(glist_isvisible(x->x_glist) && gobj_shouldvis((t_gobj *)x, x->x_glist))
+  n_knob_calc_state_from_float(x, f);
+  n_knob_calc_count_from_state(x);
+  if(visible(x))
     {
       if (x->framepos != x->framepos_old)
         {
           n_knob_erase_image(x);
           n_knob_draw_image(x);
           n_knob_bind_image(x);
-        }
+       }
       if (x->num_vis)
         {
           n_knob_erase_num(x);
@@ -825,8 +871,6 @@ static void n_knob_float(t_n_knob* x, t_float f)
         }
     }
   x->framepos_old = x->framepos;
-  /* ? */
-
   n_knob_out(x);
 }
 
@@ -837,16 +881,17 @@ static void n_knob_default(t_n_knob* x)
 }
 
 // -------------------------------------------------------------------------- //
+// callback
+// -------------------------------------------------------------------------- //
 static void n_knob_loadbang(t_n_knob *x, t_floatarg action)
 {
+  post("LOADBANG");
   if(action == LB_LOAD && x->init)
     {
       n_knob_out(x);
     }
 }
 
-// -------------------------------------------------------------------------- //
-// callback
 // -------------------------------------------------------------------------- //
 static void n_knob_size_callback(t_n_knob *x, t_float w, t_float h)
 {
@@ -865,9 +910,8 @@ static void n_knob_size_callback(t_n_knob *x, t_float w, t_float h)
   x->frame_w_2 = x->frame_w / 2;
   x->frame_h_2 = x->frame_h / 2;
 
-  /* ? */
   x->framepos = (x->count / x->resolution) * (x->frames - 1);
-  if(glist_isvisible(x->x_glist) && gobj_shouldvis((t_gobj *)x, x->x_glist))
+  if(visible(x))
     {
       n_knob_erase_image(x);
       n_knob_draw_image(x);
@@ -878,7 +922,6 @@ static void n_knob_size_callback(t_n_knob *x, t_float w, t_float h)
           n_knob_draw_frame(x);
         }
     }
-  /* ? */
 }
 
 // -------------------------------------------------------------------------- //
@@ -917,8 +960,6 @@ static void n_knob_save(t_gobj *z, t_binbuf *b)
     {
       state = x->default_state;
     }
-  
-
 
   binbuf_addv(b, "ssiissiiffffisssiiisfiiiiiis", 
               gensym("#X"), 
@@ -1015,17 +1056,17 @@ static void n_knob_dialog(t_n_knob *x, t_symbol *s, int ac, t_atom *av)
   t_symbol *snd         = mygetsymbolarg(8,ac,av);
   t_symbol *rcv         = mygetsymbolarg(9,ac,av);
   t_symbol *lab         = mygetsymbolarg(10,ac,av);
-  int lab_fs            = atom_getfloatarg(11,ac,av);
-  int lab_x             = atom_getfloatarg(12,ac,av);
-  int lab_y             = atom_getfloatarg(13,ac,av);
-  int lab_col           = mygetintarg(14,ac,av);
-  int init              = atom_getfloatarg(15,ac,av);
-  int num_vis           = atom_getfloatarg(16,ac,av);
-  int num_w             = atom_getfloatarg(17,ac,av);
-  int num_fs            = atom_getfloatarg(18,ac,av);
-  int num_x             = atom_getfloatarg(19,ac,av);
-  int num_y             = atom_getfloatarg(20,ac,av);
-  int num_col           = mygetintarg(21,ac,av);
+  t_float lab_fs            = atom_getfloatarg(11,ac,av);
+  t_float lab_x             = atom_getfloatarg(12,ac,av);
+  t_float lab_y             = atom_getfloatarg(13,ac,av);
+  t_float lab_col           = mygetintarg(14,ac,av);
+  t_float init              = atom_getfloatarg(15,ac,av);
+  t_float num_vis           = atom_getfloatarg(16,ac,av);
+  t_float num_w             = atom_getfloatarg(17,ac,av);
+  t_float num_fs            = atom_getfloatarg(18,ac,av);
+  t_float num_x             = atom_getfloatarg(19,ac,av);
+  t_float num_y             = atom_getfloatarg(20,ac,av);
+  t_float num_col           = mygetintarg(21,ac,av);
 
   if ((strcmp(x->filename->s_name, filename->s_name))
       || x->orientation != orientation
@@ -1063,16 +1104,7 @@ static void n_knob_dialog(t_n_knob *x, t_symbol *s, int ac, t_atom *av)
       || x->lab_y != lab_y
       || x->lab_col != lab_col)
     {
-      CLIP_MINMAX(4, 256, lab_fs);
-      x->lab_fs = lab_fs;
-      x->lab_x = lab_x;
-      x->lab_y = lab_y;
-      x->lab_col = lab_col;
-      if (x->lab_vis)
-        {
-          n_knob_erase_label(x);
-          n_knob_draw_label(x);
-        }
+      n_knob_labpar(x, lab_fs, lab_x, lab_y, lab_col);
     }
 
   if (x->init != init)
@@ -1086,18 +1118,7 @@ static void n_knob_dialog(t_n_knob *x, t_symbol *s, int ac, t_atom *av)
       || x->num_y != num_y
       || x->num_col != num_col)
     {
-      CLIP_MINMAX(1, 8, num_w);
-      x->num_w = num_w;
-      CLIP_MINMAX(4, 256, num_fs);
-      x->num_fs = num_fs;
-      x->num_x = num_x;
-      x->num_y = num_y;
-      x->num_col = num_col;
-      if (x->num_vis)
-        {
-          n_knob_erase_num(x);
-          n_knob_draw_num(x);
-        }
+      n_knob_numpar(x, num_w, num_fs, num_x, num_y, num_col);
     }
 
   if (x->num_vis != num_vis)
@@ -1157,6 +1178,7 @@ static void *n_knob_new(t_symbol *s, t_int ac, t_atom *av)
   x->sel = 0;
   x->state_old = NEVERST;
   x->framepos_old = NEVERST;
+  x->num_disp = 0;
   
   // arguments
   if (ac == 23
@@ -1236,31 +1258,12 @@ static void *n_knob_new(t_symbol *s, t_int ac, t_atom *av)
     }
   
   // label
-  if (!(strcmp(lab->s_name, "empty")))
-    {
-      x->lab = lab;
-      x->lab_vis = 0;
-    }
-  else
-    {
-      x->lab = lab;
-      x->lab_vis = 1;
-    }
-  CLIP_MINMAX(4, 256, lab_fs);
-  x->lab_fs = lab_fs;
-  x->lab_x = lab_x;
-  x->lab_y = lab_y;
-  x->lab_col = lab_col;
+  n_knob_lab_set(x, lab);
+  n_knob_labpar_set(x, lab_fs, lab_x, lab_y, lab_col);
 
   // numeric
-  x->num_vis = num_vis;
-  CLIP_MINMAX(1, 8, num_w);
-  x->num_w = num_w;
-  CLIP_MINMAX(4, 256, num_fs);
-  x->num_fs = num_fs;
-  x->num_x = num_x;
-  x->num_y = num_y;
-  x->num_col = num_col;
+  n_knob_numpar_set(x, num_w, num_fs, num_x, num_y, num_col);
+  n_knob_numvis_set(x, num_vis);
 
   // snd rcv
   x->snd_able = 0;
@@ -1269,9 +1272,9 @@ static void *n_knob_new(t_symbol *s, t_int ac, t_atom *av)
   n_knob_rcv(x, rcv);
 
   // knob
-  n_knob_knobpar(x, min, max, step, default_state, resolution);
-  n_knob_init(x, init);
-  n_knob_set(x, state);
+  n_knob_knobpar_set(x, min, max, step, default_state, resolution);
+  x->init = init;
+  x->state = state;
 
   // image
   n_knob_image(x, filename, orientation, frames);
@@ -1294,24 +1297,40 @@ static void n_knob_free(t_n_knob* x)
 // -------------------------------------------------------------------------- //
 void n_knob_setup(void)
 {
-  n_knob_class = class_new(gensym("n_knob"),(t_newmethod)n_knob_new,(t_method)n_knob_free,sizeof(t_n_knob),0,A_GIMME,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_image,gensym("image"),A_SYMBOL,A_FLOAT,A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_knobpar,gensym("knobpar"),A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_snd,gensym("send"),A_SYMBOL,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_rcv,gensym("receive"),A_SYMBOL,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_lab,gensym("label"),A_SYMBOL,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_labpar,gensym("labpar"),A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_numpar,gensym("numpar"),A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_numvis,gensym("numvis"),A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_set,gensym("set"),A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_init,gensym("init"),A_FLOAT,0);
-  class_addbang(n_knob_class, (t_method)n_knob_bang);
-  class_addfloat(n_knob_class, (t_method)n_knob_float);
-  class_addmethod(n_knob_class,(t_method)n_knob_default,gensym("default"),0);
-  class_addmethod(n_knob_class,(t_method)n_knob_size_callback, gensym("_size"),A_FLOAT,A_FLOAT,0);
-  class_addmethod(n_knob_class,(t_method)n_knob_double_callback,gensym("_double"),0);
-  class_addmethod(n_knob_class, (t_method)n_knob_loadbang, gensym("loadbang"),A_DEFFLOAT, 0);
-  class_addmethod(n_knob_class, (t_method)n_knob_dialog, gensym("dialog"),A_GIMME, 0);
+  n_knob_class = class_new(gensym("n_knob"),(t_newmethod)n_knob_new,
+			   (t_method)n_knob_free,sizeof(t_n_knob),0,A_GIMME,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_image,
+		  gensym("image"),A_SYMBOL,A_FLOAT,A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_knobpar,
+		  gensym("knobpar"),A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_snd,
+		  gensym("send"),A_SYMBOL,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_rcv,
+		  gensym("receive"),A_SYMBOL,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_lab,
+		  gensym("label"),A_SYMBOL,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_labpar,
+		  gensym("labpar"),A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_numpar,
+		  gensym("numpar"),A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_numvis,
+		  gensym("numvis"),A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_set,
+		  gensym("set"),A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_init,
+		  gensym("init"),A_FLOAT,0);
+  class_addbang(n_knob_class,(t_method)n_knob_bang);
+  class_addfloat(n_knob_class,(t_method)n_knob_float);
+  class_addmethod(n_knob_class,(t_method)n_knob_default,
+		  gensym("default"),0);
+  class_addmethod(n_knob_class,(t_method)n_knob_size_callback,
+		  gensym("_size"),A_FLOAT,A_FLOAT,0);
+  class_addmethod(n_knob_class,(t_method)n_knob_double_callback,
+		  gensym("_double"),0);
+  class_addmethod(n_knob_class,(t_method)n_knob_loadbang,
+		  gensym("loadbang"),A_DEFFLOAT, 0);
+  class_addmethod(n_knob_class,(t_method)n_knob_dialog,
+		  gensym("dialog"),A_GIMME, 0);
   n_knob_widgetbehavior.w_getrectfn=n_knob_getrect;
   n_knob_widgetbehavior.w_displacefn=n_knob_displace;
   n_knob_widgetbehavior.w_selectfn=n_knob_select;
