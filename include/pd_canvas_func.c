@@ -1,41 +1,37 @@
 /* canvas function */
+
+/* #define DEBUG(X) X */
 #define DEBUG(X)
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_erase(long x,
-			t_canvas *canvas,
-			int id)
+inline void pd_cf_erase(char *idcnv,
+			char *id)
 {
-  sys_vgui(".x%lx.c delete t%lx%d\n",
-	   canvas,
-	   x,
+  sys_vgui("%s delete %s\n",
+	   idcnv,
 	   id);
-  DEBUG(post(".x%lx.c delete t%lx%d\n",
-	   canvas,
-	   x,
+  DEBUG(post("%s delete %s\n",
+	   idcnv,
 	   id));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_coords_4(long x,
-			   t_canvas *canvas,
-			   int id,
+inline void pd_cf_coords_4(char *idcnv,
+			   char *id,
 			   int x0,
 			   int y0,
 			   int x1,
 			   int y1)
 {
-  sys_vgui(".x%lx.c coords t%lx%d %d %d %d %d\n",
-	   canvas,
-	   x,
+  sys_vgui("%s coords %s %d %d %d %d\n",
+	   idcnv,
 	   id,
 	   x0,
 	   y0,
 	   x1,
 	   y1);
-  DEBUG(post(".x%lx.c coords t%lx%d %d %d %d %d\n",
-	   canvas,
-	   x,
+  DEBUG(post("%s coords %s %d %d %d %d\n",
+	   idcnv,
 	   id,
 	   x0,
 	   y0,
@@ -44,117 +40,99 @@ inline void pd_cf_coords_4(long x,
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_coords_2(long x,
-			   t_canvas *canvas,
-			   int id,
+inline void pd_cf_coords_2(char *idcnv,
+			   char *id,
 			   int x0,
 			   int y0)
 {
-  sys_vgui(".x%lx.c coords t%lx%d %d %d\n",
-	   canvas,
-	   x,
+  sys_vgui("%s coords %s %d %d\n",
+	   idcnv,
 	   id,
 	   x0,
 	   y0);
-  DEBUG(post(".x%lx.c coords t%lx%d %d %d\n",
-	   canvas,
-	   x,
+  DEBUG(post("%s coords %s %d %d\n",
+	   idcnv,
 	   id,
 	   x0,
 	   y0));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_color_line(long x,
-			     t_canvas *canvas,
-			     int id,
+inline void pd_cf_color_line(char *idcnv,
+			     char *id,
 			     int col)
 {
-  sys_vgui(".x%lx.c itemconfigure t%lx%d -fill #%6.6x\n",
-	   canvas,
-	   x,
+  sys_vgui("%s itemconfigure %s -fill #%6.6x\n",
+	   idcnv,
 	   id,
 	   col);
-  DEBUG(post(".x%lx.c itemconfigure t%lx%d -fill #%6.6x\n",
-	   canvas,
-	   x,
+  DEBUG(post("%s itemconfigure %s -fill #%6.6x\n",
+	   idcnv,
 	   id,
 	   col));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_color_1(long x,
-			  t_canvas *canvas,
-			  int id,
+inline void pd_cf_color_1(char *idcnv,
+			  char *id,
 			  int col)
 {
-  sys_vgui(".x%lx.c itemconfigure t%lx%d -outline #%6.6x\n",
-	   canvas,
-	   x,
+  sys_vgui("%s itemconfigure %s -outline #%6.6x\n",
+	   idcnv,
 	   id,
 	   col);
-  DEBUG(post(".x%lx.c itemconfigure t%lx%d -outline #%6.6x\n",
-	   canvas,
-	   x,
+  DEBUG(post("%s itemconfigure %s -outline #%6.6x\n",
+	   idcnv,
 	   id,
 	   col));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_color_2(long x,
-			  t_canvas *canvas,
-			  int id,
+inline void pd_cf_color_2(char *idcnv,
+			  char *id,
 			  int fcol,
 			  int bcol)
 {
-  sys_vgui(".x%lx.c itemconfigure t%lx%d -outline #%6.6x -fill #%6.6x\n",
-	   canvas,
-	   x,
+  sys_vgui("%s itemconfigure %s -outline #%6.6x -fill #%6.6x\n",
+	   idcnv,
 	   id,
 	   fcol,
 	   bcol);
-  DEBUG(post(".x%lx.c itemconfigure t%lx%d -outline #%6.6x -fill #%6.6x\n",
-	   canvas,
-	   x,
+  DEBUG(post("%s itemconfigure %s -outline #%6.6x -fill #%6.6x\n",
+	   idcnv,
 	   id,
 	   fcol,
 	   bcol));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_w(long x,
-		    t_canvas *canvas,
-		    int id,
+inline void pd_cf_w(char *idcnv,
+		    char *id,
 		    int w)
 {
-  sys_vgui(".x%lx.c itemconfigure t%lx%d -width %d\n",
-	   canvas,
-	   x,
+  sys_vgui("%s itemconfigure %s -width %d\n",
+	   idcnv,
 	   id,
 	   w);
-  DEBUG(post(".x%lx.c itemconfigure t%lx%d -width %d\n",
-	   canvas,
-	   x,
+  DEBUG(post("%s itemconfigure %s -width %d\n",
+	   idcnv,
 	   id,
 	   w));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_fs(long x,
-		     t_canvas *canvas,
-		     int id,
+inline void pd_cf_fs(char *idcnv,
+		     char *id,
 		     int fs)
 {
-  sys_vgui(".x%lx.c itemconfigure t%lx%d -anchor w -font {{%s} -%d %s}\n",
-	   canvas,
-	   x,
+  sys_vgui("%s itemconfigure %s -anchor w -font {{%s} -%d %s}\n",
+	   idcnv,
 	   id,
 	   sys_font,
 	   fs,
 	   sys_fontweight);
-  DEBUG(post(".x%lx.c itemconfigure t%lx%d -anchor w -font {{%s} -%d %s}\n",
-	   canvas,
-	   x,
+  DEBUG(post("%s itemconfigure %s -anchor w -font {{%s} -%d %s}\n",
+	   idcnv,
 	   id,
 	   sys_font,
 	   fs,
@@ -162,48 +140,41 @@ inline void pd_cf_fs(long x,
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_stex(long x,
-		       t_canvas *canvas,
-		       int id,
+inline void pd_cf_stex(char *idcnv,
+		       char *id,
 		       int st,
 		       int ex)
 {
-  sys_vgui(".x%lx.c itemconfigure t%lx%d  -start %d -extent %d\n",
-	   canvas,
-	   x,
+  sys_vgui("%s itemconfigure %s  -start %d -extent %d\n",
+	   idcnv,
 	   id,
 	   st,
 	   ex);
-  DEBUG(post(".x%lx.c itemconfigure t%lx%d  -start %d -extent %d\n",
-	   canvas,
-	   x,
+  DEBUG(post("%s itemconfigure %s  -start %d -extent %d\n",
+	   idcnv,
 	   id,
 	   st,
 	   ex));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_tx(long x,
-		     t_canvas *canvas,
-		     int id,
+inline void pd_cf_tx(char *idcnv,
+		     char *id,
 		     const char text[])
 {
-  sys_vgui(".x%lx.c itemconfigure t%lx%d -text {%s}\n",
-	   canvas,
-	   x,
+  sys_vgui("%s itemconfigure %s -text {%s}\n",
+	   idcnv,
 	   id,
 	   text);
-  DEBUG(post(".x%lx.c itemconfigure t%lx%d -text {%s}\n",
-	   canvas,
-	   x,
+  DEBUG(post("%s itemconfigure %s -text {%s}\n",
+	   idcnv,
 	   id,
 	   text));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_line(long x,
-		       t_canvas *canvas,
-		       int id,
+inline void pd_cf_line(char *idcnv,
+		       char *id,
 		       int col,
 		       int w,
 		       int x0,
@@ -211,32 +182,29 @@ inline void pd_cf_line(long x,
 		       int x1,
 		       int y1)
 {
-  sys_vgui(".x%lx.c create line %d %d %d %d -fill #%6.6x -width %d -tags t%lx%d\n",
-	   canvas,
+  sys_vgui("%s create line %d %d %d %d -fill #%6.6x -width %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
 	   y1,
 	   col,
 	   w,
-	   x,
 	   id);
-  DEBUG(post(".x%lx.c create line %d %d %d %d -fill #%6.6x -width %d -tags t%lx%d\n",
-	   canvas,
+  DEBUG(post("%s create line %d %d %d %d -fill #%6.6x -width %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
 	   y1,
 	   col,
 	   w,
-	   x,
 	   id));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_rect(long x,
-		       t_canvas *canvas,
-		       int id,
+inline void pd_cf_rect(char *idcnv,
+		       char *id,
 		       int col,
 		       int w,
 		       int x0,
@@ -244,32 +212,29 @@ inline void pd_cf_rect(long x,
 		       int x1,
 		       int y1)
 {
-  sys_vgui(".x%lx.c create rectangle %d %d %d %d -outline #%6.6x -width %d -tags t%lx%d\n",
-	   canvas,
+  sys_vgui("%s create rectangle %d %d %d %d -outline #%6.6x -width %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
 	   y1,
 	   col,
 	   w,
-	   x,
 	   id);
-  DEBUG(post(".x%lx.c create rectangle %d %d %d %d -outline #%6.6x -width %d -tags t%lx%d\n",
-	   canvas,
+  DEBUG(post("%s create rectangle %d %d %d %d -outline #%6.6x -width %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
 	   y1,
 	   col,
 	   w,
-	   x,
 	   id));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_rect_filled(long x,
-			      t_canvas *canvas,
-			      int id,
+inline void pd_cf_rect_filled(char *idcnv,
+			      char *id,
 			      int fcol,
 			      int bcol,
 			      int w,
@@ -278,8 +243,8 @@ inline void pd_cf_rect_filled(long x,
 			      int x1,
 			      int y1)
 {
-  sys_vgui(".x%lx.c create rectangle %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -tags t%lx%d\n",
-	   canvas,
+  sys_vgui("%s create rectangle %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
@@ -287,10 +252,9 @@ inline void pd_cf_rect_filled(long x,
 	   fcol,
 	   bcol,
 	   w,
-	   x,
 	   id);
-  DEBUG(post(".x%lx.c create rectangle %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -tags t%lx%d\n",
-	   canvas,
+  DEBUG(post("%s create rectangle %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
@@ -298,14 +262,12 @@ inline void pd_cf_rect_filled(long x,
 	   fcol,
 	   bcol,
 	   w,
-	   x,
 	   id));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_oval(long x,
-		       t_canvas *canvas,
-		       int id,
+inline void pd_cf_oval(char *idcnv,
+		       char *id,
 		       int col,
 		       int w,
 		       int x0,
@@ -313,32 +275,29 @@ inline void pd_cf_oval(long x,
 		       int x1,
 		       int y1)
 {
-  sys_vgui(".x%lx.c create oval %d %d %d %d -outline #%6.6x -width %d -tags t%lx%d\n",
-	   canvas,
+  sys_vgui("%s create oval %d %d %d %d -outline #%6.6x -width %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
 	   y1,
 	   col,
 	   w,
-	   x,
 	   id);
-  DEBUG(post(".x%lx.c create oval %d %d %d %d -outline #%6.6x -width %d -tags t%lx%d\n",
-	   canvas,
+  DEBUG(post("%s create oval %d %d %d %d -outline #%6.6x -width %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
 	   y1,
 	   col,
 	   w,
-	   x,
 	   id));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_oval_filled(long x,
-			      t_canvas *canvas,
-			      int id,
+inline void pd_cf_oval_filled(char *idcnv,
+			      char *id,
 			      int fcol,
 			      int bcol,
 			      int w,
@@ -347,8 +306,8 @@ inline void pd_cf_oval_filled(long x,
 			      int x1,
 			      int y1)
 {
-  sys_vgui(".x%lx.c create oval %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -tags t%lx%d\n",
-	   canvas,
+  sys_vgui("%s create oval %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
@@ -356,10 +315,9 @@ inline void pd_cf_oval_filled(long x,
 	   fcol,
 	   bcol,
 	   w,
-	   x,
 	   id);
-  DEBUG(post(".x%lx.c create oval %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -tags t%lx%d\n",
-	   canvas,
+  DEBUG(post("%s create oval %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
@@ -367,14 +325,12 @@ inline void pd_cf_oval_filled(long x,
 	   fcol,
 	   bcol,
 	   w,
-	   x,
 	   id));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_arc(long x,
-		      t_canvas *canvas,
-		      int id,
+inline void pd_cf_arc(char *idcnv,
+		      char *id,
 		      int col,
 		      int w,
 		      int st,
@@ -384,8 +340,8 @@ inline void pd_cf_arc(long x,
 		      int x1,
 		      int y1)
 {
-  sys_vgui(".x%lx.c create arc %d %d %d %d -outline #%6.6x -width %d -start %d -extent %d -tags t%lx%d\n",
-	   canvas,
+  sys_vgui("%s create arc %d %d %d %d -outline #%6.6x -width %d -start %d -extent %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
@@ -394,10 +350,9 @@ inline void pd_cf_arc(long x,
 	   w,
 	   st,
 	   ex,
-	   x,
 	   id);
-  DEBUG(post(".x%lx.c create arc %d %d %d %d -outline #%6.6x -width %d -start %d -extent %d -tags t%lx%d\n",
-	   canvas,
+  DEBUG(post("%s create arc %d %d %d %d -outline #%6.6x -width %d -start %d -extent %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
@@ -406,14 +361,12 @@ inline void pd_cf_arc(long x,
 	   w,
 	   st,
 	   ex,
-	   x,
 	   id));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_arc_filled(long x,
-			     t_canvas *canvas,
-			     int id,
+inline void pd_cf_arc_filled(char *idcnv,
+			     char *id,
 			     int fcol,
 			     int bcol,
 			     int w,
@@ -424,8 +377,8 @@ inline void pd_cf_arc_filled(long x,
 			     int x1,
 			     int y1)
 {
-  sys_vgui(".x%lx.c create arc %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -start %d -extent %d -tags t%lx%d\n",
-	   canvas,
+  sys_vgui("%s create arc %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -start %d -extent %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
@@ -435,10 +388,9 @@ inline void pd_cf_arc_filled(long x,
 	   w,
 	   st,
 	   ex,
-	   x,
 	   id);
-  DEBUG(post(".x%lx.c create arc %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -start %d -extent %d -tags t%lx%d\n",
-	   canvas,
+  DEBUG(post("%s create arc %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -start %d -extent %d -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   x1,
@@ -448,22 +400,20 @@ inline void pd_cf_arc_filled(long x,
 	   w,
 	   st,
 	   ex,
-	   x,
 	   id));
 }
 
 //----------------------------------------------------------------------------//
-inline void pd_cf_text(long x,
-		       t_canvas *canvas,
-		       int id,
+inline void pd_cf_text(char *idcnv,
+		       char *id,
 		       int col,
 		       int fs,
 		       int x0,
 		       int y0,
 		       const char text[])
 {
-  sys_vgui(".x%lx.c create text %d %d -text {%s} -anchor w -font {{%s} -%d %s} -fill #%6.6x -tags t%lx%d\n",
-	   canvas,
+  sys_vgui("%s create text %d %d -text {%s} -anchor w -font {{%s} -%d %s} -fill #%6.6x -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   text,
@@ -471,10 +421,9 @@ inline void pd_cf_text(long x,
 	   fs,
 	   sys_fontweight,
 	   col,
-	   x,
 	   id);
-  DEBUG(post(".x%lx.c create text %d %d -text {%s} -anchor w -font {{%s} -%d %s} -fill #%6.6x -tags t%lx%d\n",
-	   canvas,
+  DEBUG(post("%s create text %d %d -text {%s} -anchor w -font {{%s} -%d %s} -fill #%6.6x -tags %s\n",
+	   idcnv,
 	   x0,
 	   y0,
 	   text,
@@ -482,6 +431,5 @@ inline void pd_cf_text(long x,
 	   fs,
 	   sys_fontweight,
 	   col,
-	   x,
 	   id));
 }
