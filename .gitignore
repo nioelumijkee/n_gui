@@ -1,3 +1,4 @@
 *.o
 *.pd_linux
 TODO.md
+examples.pd
