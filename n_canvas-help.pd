@@ -1,6 +1,6 @@
 #N canvas 745 107 434 504 10;
-#X obj 37 85 n_canvas 200 200 empty \\\$0-main empty 10 10 11 12303291
-65793 65793 16;
+#X obj 37 85 n_canvas 200 200 \\\$0-s-main \\\$0-r-main empty 10 10
+11 12303291 65793 65793 3;
 #N canvas 128 174 476 374 size 0;
 #X obj 184 179 n_canvas 100 100 empty empty empty 20 20 20 14476540
 3952892 3952892 100;
@@ -490,6 +490,44 @@ x1 y1;
 #X text 34 473 0 - Button released \, 1 - Button click \, 2 - Button
 pressed;
 #X text 184 310 (or Control);
+#N canvas 138 280 511 397 <- 0;
+#X obj 114 20 r \$0-s-main;
+#X obj 114 40 unpack f f f f f f;
+#X obj 114 118 sel 0;
+#X obj 114 362 s \$0-r-main;
+#X msg 114 341 0 0 \, 0 1 \, 0 2;
+#X obj 176 285 s \$0-r-main;
+#X text 334 249 create lines and rect.;
+#X text 22 344 erase objects.;
+#X obj 163 71 clip 0 200;
+#X obj 209 93 clip 0 200;
+#X obj 176 215 pack f f f f f f f;
+#X obj 250 146 - 2;
+#X obj 280 146 - 2;
+#X obj 310 146 + 2;
+#X obj 340 146 + 2;
+#X msg 176 235 1 0 13 1 \$2 0 \$2 200 \, 1 1 13 1 0 \$3 200 \$3 \,
+3 2 13 17 1 \$4 \$5 \$6 \$7;
+#X connect 0 0 1 0;
+#X connect 1 0 2 0;
+#X connect 1 2 8 0;
+#X connect 1 3 9 0;
+#X connect 2 0 4 0;
+#X connect 2 1 10 0;
+#X connect 4 0 3 0;
+#X connect 8 0 10 1;
+#X connect 8 0 11 0;
+#X connect 8 0 13 0;
+#X connect 9 0 10 2;
+#X connect 9 0 12 0;
+#X connect 9 0 14 0;
+#X connect 10 0 15 0;
+#X connect 11 0 10 3;
+#X connect 12 0 10 4;
+#X connect 13 0 10 5;
+#X connect 14 0 10 6;
+#X connect 15 0 5 0;
+#X restore 253 401 pd <- this animation;
 #X connect 0 0 19 0;
 #X connect 19 0 18 0;
 #X connect 19 1 20 0;

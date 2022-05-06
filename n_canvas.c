@@ -5,10 +5,9 @@
 #include "m_imp.h"
 #include "g_canvas.h"
 #include "g_all_guis.h"
-#include "include/pd_canvas_func.c"
-#include "include/pd_func.c"
 
 //----------------------------------------------------------------------------//
+#define DEBUG(X) X
 #define MAXEL 65536 // 2^16
 #define M_BASE -2
 #define M_LABEL -1
@@ -59,7 +58,6 @@ typedef struct _n_canvas_element
   int x[2];
   int y[2];
   t_symbol *text;
-  char id[16]; // i655350
 } t_n_canvas_element;
 
 //----------------------------------------------------------------------------//
@@ -97,10 +95,406 @@ typedef struct _n_canvas
   struct _n_canvas_element *e;
   t_symbol *s_empty; /* */
   int dollarzero;
-  char idcnv[16];
-  char id_base[16];
-  char id_label[16];
 } t_n_canvas;
+
+//----------------------------------------------------------------------------//
+// pd function
+//----------------------------------------------------------------------------//
+void pd_dollar_in_string(char *str)
+{
+	int i = 0;
+	int dollar = -1;
+	while (str[i] != '\0')
+	{
+		if (str[i] == '$')
+			dollar = i;
+		i++;
+	}
+	if (dollar != -1)
+	{
+		str[i + 1] = '\0';
+		while (i != dollar)
+		{
+			str[i] = str[i - 1];
+			i--;
+		}
+		str[i] = '\\';
+	}
+}
+
+//----------------------------------------------------------------------------//
+int pd_getarg_int(int n, int ac, t_atom *av)
+{
+	t_symbol *buf;
+	if (IS_A_FLOAT(av, n))
+	{
+		return (int)atom_getfloatarg(n, ac, av);
+	}
+	else
+	{
+		buf = (t_symbol *)atom_getsymbolarg(n, ac, av);
+		return atoi(buf->s_name);
+	}
+}
+
+//----------------------------------------------------------------------------//
+t_symbol *pd_getarg_symbol(int n, int ac, t_atom *av)
+{
+	char buf[20];
+	if (IS_A_FLOAT(av, n))
+	{
+		sprintf(buf, "%d", (int)atom_getfloatarg(n, ac, av));
+		return (t_symbol *)gensym(buf);
+	}
+	else
+	{
+		return (t_symbol *)atom_getsymbolarg(n, ac, av);
+	}
+}
+
+//----------------------------------------------------------------------------//
+t_symbol *pd_dollarzero2sym(t_symbol *s, int id)
+{
+	char buf[256];
+	char buf_id[8];
+	int i,j,k;
+	sprintf(buf_id,"%d",id);
+	i = 0;
+	j = 0;
+	while (s->s_name[i] != '\0')
+	{
+		buf[j] = s->s_name[i];
+		if (s->s_name[i] == '$' && s->s_name[i+1] == '0')
+		{
+			k = 0;
+			while(buf_id[k] != '\0')
+			{
+				buf[j] = buf_id[k];
+				k++;
+				j++;
+			}
+			j--;
+			i++;
+		}
+		i++;
+		j++;
+	}
+	buf[j] = '\0';
+	return gensym(buf);
+}
+
+//----------------------------------------------------------------------------//
+int pd_color_30[] =
+  {
+    16579836, 10526880, 4210752, 16572640, 16572608,
+    16579784, 14220504, 14220540, 14476540, 16308476,
+    14737632, 8158332, 2105376, 16525352, 16559172,
+    15263784, 1370132, 2684148, 3952892, 16003312,
+    12369084, 6316128, 0, 9177096, 5779456,
+    7874580, 2641940, 17488, 5256, 5767248};
+
+//----------------------------------------------------------------------------//
+void pd_color(int *col)
+{
+    if (*col >= 0)
+    {
+        *col = *col % 30;
+        *col = pd_color_30[*col];
+    }
+    else
+    {
+        *col = (0 - *col) & 0x00ffffff;
+    }
+}
+
+//----------------------------------------------------------------------------//
+// draw function
+//----------------------------------------------------------------------------//
+inline void pd_cf_erase(t_n_canvas *x, int id)
+{
+  sys_vgui(".x%lx.c delete t%lx%d\n",
+	   x->x_canvas,
+	   x, id);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_coords_4(t_n_canvas *x, int id,
+			   int x0,
+			   int y0,
+			   int x1,
+			   int y1)
+{
+  sys_vgui(".x%lx.c coords t%lx%d %d %d %d %d\n",
+	   x->x_canvas,
+	   x, id,
+	   x0,
+	   y0,
+	   x1,
+	   y1);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_coords_2(t_n_canvas *x, int id,
+			   int x0,
+			   int y0)
+{
+  sys_vgui(".x%lx.c coords t%lx%d %d %d\n",
+	   x->x_canvas,
+	   x, id,
+	   x0,
+	   y0);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_color_line(t_n_canvas *x, int id,
+			     int col)
+{
+  sys_vgui(".x%lx.c itemconfigure t%lx%d -fill #%6.6x\n",
+	   x->x_canvas,
+	   x, id,
+	   col);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_color_1(t_n_canvas *x, int id,
+			  int col)
+{
+  sys_vgui(".x%lx.c itemconfigure t%lx%d -outline #%6.6x\n",
+	   x->x_canvas,
+	   x, id,
+	   col);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_color_2(t_n_canvas *x, int id,
+			  int fcol,
+			  int bcol)
+{
+  sys_vgui(".x%lx.c itemconfigure t%lx%d -outline #%6.6x -fill #%6.6x\n",
+	   x->x_canvas,
+	   x, id,
+	   fcol,
+	   bcol);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_w(t_n_canvas *x, int id,
+		    int w)
+{
+  sys_vgui(".x%lx.c itemconfigure t%lx%d -width %d\n",
+	   x->x_canvas,
+	   x, id,
+	   w);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_fs(t_n_canvas *x, int id,
+		     int fs)
+{
+  sys_vgui(".x%lx.c itemconfigure t%lx%d -anchor w -font {{%s} -%d %s}\n",
+	   x->x_canvas,
+	   x, id,
+	   sys_font,
+	   fs,
+	   sys_fontweight);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_stex(t_n_canvas *x, int id,
+		       int st,
+		       int ex)
+{
+  sys_vgui(".x%lx.c itemconfigure t%lx%d  -start %d -extent %d\n",
+	   x->x_canvas,
+	   x, id,
+	   st,
+	   ex);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_tx(t_n_canvas *x, int id,
+		     const char text[])
+{
+  sys_vgui(".x%lx.c itemconfigure t%lx%d -text {%s}\n",
+	   x->x_canvas,
+	   x, id,
+	   text);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_line(t_n_canvas *x, int id,
+		       int col,
+		       int w,
+		       int x0,
+		       int y0,
+		       int x1,
+		       int y1)
+{
+  sys_vgui(".x%lx.c create line %d %d %d %d -fill #%6.6x -width %d -tags t%lx%d\n",
+	   x->x_canvas,
+	   x0,
+	   y0,
+	   x1,
+	   y1,
+	   col,
+	   w,
+	   x, id);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_rect(t_n_canvas *x, int id,
+		       int col,
+		       int w,
+		       int x0,
+		       int y0,
+		       int x1,
+		       int y1)
+{
+  sys_vgui(".x%lx.c create rectangle %d %d %d %d -outline #%6.6x -width %d -tags t%lx%d\n",
+	   x->x_canvas,
+	   x0,
+	   y0,
+	   x1,
+	   y1,
+	   col,
+	   w,
+	   x, id);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_rect_filled(t_n_canvas *x, int id,
+			      int fcol,
+			      int bcol,
+			      int w,
+			      int x0,
+			      int y0,
+			      int x1,
+			      int y1)
+{
+  sys_vgui(".x%lx.c create rectangle %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -tags t%lx%d\n",
+	   x->x_canvas,
+	   x0,
+	   y0,
+	   x1,
+	   y1,
+	   fcol,
+	   bcol,
+	   w,
+	   x, id);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_oval(t_n_canvas *x, int id,
+		       int col,
+		       int w,
+		       int x0,
+		       int y0,
+		       int x1,
+		       int y1)
+{
+  sys_vgui(".x%lx.c create oval %d %d %d %d -outline #%6.6x -width %d -tags t%lx%d\n",
+	   x->x_canvas,
+	   x0,
+	   y0,
+	   x1,
+	   y1,
+	   col,
+	   w,
+	   x, id);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_oval_filled(t_n_canvas *x, int id,
+			      int fcol,
+			      int bcol,
+			      int w,
+			      int x0,
+			      int y0,
+			      int x1,
+			      int y1)
+{
+  sys_vgui(".x%lx.c create oval %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -tags t%lx%d\n",
+	   x->x_canvas,
+	   x0,
+	   y0,
+	   x1,
+	   y1,
+	   fcol,
+	   bcol,
+	   w,
+	   x, id);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_arc(t_n_canvas *x, int id,
+		      int col,
+		      int w,
+		      int st,
+		      int ex,
+		      int x0,
+		      int y0,
+		      int x1,
+		      int y1)
+{
+  sys_vgui(".x%lx.c create arc %d %d %d %d -outline #%6.6x -width %d -start %d -extent %d -tags t%lx%d\n",
+	   x->x_canvas,
+	   x0,
+	   y0,
+	   x1,
+	   y1,
+	   col,
+	   w,
+	   st,
+	   ex,
+	   x, id);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_arc_filled(t_n_canvas *x, int id,
+			     int fcol,
+			     int bcol,
+			     int w,
+			     int st,
+			     int ex,
+			     int x0,
+			     int y0,
+			     int x1,
+			     int y1)
+{
+  sys_vgui(".x%lx.c create arc %d %d %d %d -outline #%6.6x -fill #%6.6x -width %d -start %d -extent %d -tags t%lx%d\n",
+	   x->x_canvas,
+	   x0,
+	   y0,
+	   x1,
+	   y1,
+	   fcol,
+	   bcol,
+	   w,
+	   st,
+	   ex,
+	   x, id);
+}
+
+//----------------------------------------------------------------------------//
+inline void pd_cf_text(t_n_canvas *x, int id,
+		       int col,
+		       int fs,
+		       int x0,
+		       int y0,
+		       const char text[])
+{
+  sys_vgui(".x%lx.c create text %d %d -text {%s} -anchor w -font {{%s} -%d %s} -fill #%6.6x -tags t%lx%d\n",
+	   x->x_canvas,
+	   x0,
+	   y0,
+	   text,
+	   sys_font,
+	   fs,
+	   sys_fontweight,
+	   col,
+	   x, id);
+}
+
 
 //----------------------------------------------------------------------------//
 // draw
@@ -120,7 +514,7 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	    {
 	      // erase
 	      if (x->e[id].type != ERASE)
-		pd_cf_erase(x->idcnv, x->e[id].id);
+		pd_cf_erase(x, id);
 	      x->e[id].type = ERASE;
 	    }
 	  else
@@ -146,11 +540,11 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	    {
 	      // erase
 	      if (x->e[id].type != ERASE)
-		pd_cf_erase(x->idcnv, x->e[id].id);
+		pd_cf_erase(x, id);
 	      x->e[id].type = LINE;
 	      
 	      // create
-	      pd_cf_line(x->idcnv, x->e[id].id,
+	      pd_cf_line(x, id,
 			 x->e[id].fcol,
 			 x->e[id].s,
 			 x->xpos + x->e[id].x[0],
@@ -181,11 +575,11 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	    {
 	      // erase
 	      if (x->e[id].type != ERASE)
-		pd_cf_erase(x->idcnv, x->e[id].id);
+		pd_cf_erase(x, id);
 	      x->e[id].type = RECT;
 	      
 	      // create
-	      pd_cf_rect(x->idcnv, x->e[id].id,
+	      pd_cf_rect(x, id,
 			 x->e[id].fcol,
 			 x->e[id].s,
 			 x->xpos + x->e[id].x[0],
@@ -218,11 +612,11 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	    {
 	      // erase
 	      if (x->e[id].type != ERASE)
-		pd_cf_erase(x->idcnv, x->e[id].id);
+		pd_cf_erase(x, id);
 	      x->e[id].type = RECT_F;
 	      
 	      // create
-	      pd_cf_rect_filled(x->idcnv, x->e[id].id,
+	      pd_cf_rect_filled(x, id,
 				x->e[id].fcol,
 				x->e[id].bcol,
 				x->e[id].s,
@@ -254,11 +648,11 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	    {
 	      // erase
 	      if (x->e[id].type != ERASE)
-		pd_cf_erase(x->idcnv, x->e[id].id);
+		pd_cf_erase(x, id);
 	      x->e[id].type = OVAL;
 	      
 	      // create
-	      pd_cf_oval(x->idcnv, x->e[id].id,
+	      pd_cf_oval(x, id,
 			 x->e[id].fcol,
 			 x->e[id].s,
 			 x->xpos + x->e[id].x[0],
@@ -291,11 +685,11 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	    {
 	      // erase
 	      if (x->e[id].type != ERASE)
-		pd_cf_erase(x->idcnv, x->e[id].id);
+		pd_cf_erase(x, id);
 	      x->e[id].type = OVAL_F;
 		
 		// create
-		pd_cf_oval_filled(x->idcnv, x->e[id].id,
+		pd_cf_oval_filled(x, id,
 				  x->e[id].fcol,
 				  x->e[id].bcol,
 				  x->e[id].s,
@@ -329,11 +723,11 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	      {
 		// erase
 		if (x->e[id].type != ERASE)
-		  pd_cf_erase(x->idcnv, x->e[id].id);
+		  pd_cf_erase(x, id);
 		x->e[id].type = ARC;
 		
 		// create
-		pd_cf_arc(x->idcnv, x->e[id].id,
+		pd_cf_arc(x, id,
 			  x->e[id].fcol,
 			  x->e[id].s,
 			  x->e[id].st,
@@ -370,11 +764,11 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	      {
 		// erase
 		if (x->e[id].type != ERASE)
-		  pd_cf_erase(x->idcnv, x->e[id].id);
+		  pd_cf_erase(x, id);
 		x->e[id].type = ARC_F;
 		
 		// create
-		pd_cf_arc_filled(x->idcnv, x->e[id].id,
+		pd_cf_arc_filled(x, id,
 				 x->e[id].fcol,
 				 x->e[id].bcol,
 				 x->e[id].s,
@@ -407,11 +801,11 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	      {
 		// erase
 		if (x->e[id].type != ERASE)
-		  pd_cf_erase(x->idcnv, x->e[id].id);
+		  pd_cf_erase(x, id);
 		x->e[id].type = TEXT;
 		
 		// create
-		pd_cf_text(x->idcnv, x->e[id].id,
+		pd_cf_text(x, id,
 			   x->e[id].fcol,
 			   x->e[id].s,
 			   x->xpos + x->e[id].x[0],
@@ -437,7 +831,7 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	      if (glist_isvisible(x->x_glist))
 		{
 		  // move
-		  pd_cf_coords_2(x->idcnv, x->e[id].id,
+		  pd_cf_coords_2(x, id,
 				 x->xpos + x->e[id].x[0],
 				 x->ypos + x->e[id].y[0]);
 		}
@@ -455,7 +849,7 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	      if (glist_isvisible(x->x_glist))
 		{
 		  // move
-		  pd_cf_coords_4(x->idcnv, x->e[id].id,
+		  pd_cf_coords_4(x, id,
 				 x->xpos + x->e[id].x[0],
 				 x->ypos + x->e[id].y[0],
 				 x->xpos + x->e[id].x[1],
@@ -480,7 +874,7 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	      if (glist_isvisible(x->x_glist))
 		{
 		  // color
-		  pd_cf_color_line(x->idcnv, x->e[id].id,
+		  pd_cf_color_line(x, id,
 				   x->e[id].fcol);
 		}
 	    }
@@ -497,7 +891,7 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	      if (glist_isvisible(x->x_glist))
 		{
 		  // color
-		  pd_cf_color_1(x->idcnv, x->e[id].id,
+		  pd_cf_color_1(x, id,
 				x->e[id].fcol);
 		}
 	    }
@@ -516,7 +910,7 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	      if (glist_isvisible(x->x_glist))
 		{
 		  // color
-		  pd_cf_color_2(x->idcnv, x->e[id].id,
+		  pd_cf_color_2(x, id,
 				x->e[id].fcol,
 				x->e[id].bcol);
 		}
@@ -538,7 +932,7 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 		if (glist_isvisible(x->x_glist))
 		  {
 		    // w
-		    pd_cf_w(x->idcnv, x->e[id].id,
+		    pd_cf_w(x, id,
 			    x->e[id].s);
 		  }
 	    }
@@ -553,7 +947,7 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 		if (glist_isvisible(x->x_glist))
 		  {
 		    // fs
-		    pd_cf_fs(x->idcnv, x->e[id].id,
+		    pd_cf_fs(x, id,
 			     x->e[id].s);
 		  }
 	    }
@@ -574,7 +968,7 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	      if (glist_isvisible(x->x_glist))
 		{
 		  // stex
-		  pd_cf_stex(x->idcnv, x->e[id].id,
+		  pd_cf_stex(x, id,
 			     x->e[id].st,
 			     x->e[id].ex);
 		}
@@ -595,7 +989,7 @@ void n_canvas_list(t_n_canvas *x, t_symbol *s, int ac, t_atom *av)
 	      if (glist_isvisible(x->x_glist))
 		{
 		  // text
-		  pd_cf_tx(x->idcnv, x->e[id].id,
+		  pd_cf_tx(x, id,
 			   x->e[id].text->s_name);
 		}
 	    }
@@ -610,8 +1004,9 @@ void n_canvas_draw_new(t_n_canvas *x, t_glist *glist)
 {
   x->xpos = text_xpix(&x->x_obj, glist);
   x->ypos = text_ypix(&x->x_obj, glist);
+  x->x_canvas = glist_getcanvas(glist);
   
-  pd_cf_rect_filled(x->idcnv, x->id_base,
+  pd_cf_rect_filled(x, M_BASE,
 		    x->x_fcol,
 		    x->x_bcol,
 		    1,
@@ -621,12 +1016,12 @@ void n_canvas_draw_new(t_n_canvas *x, t_glist *glist)
 		    x->ypos + x->x_h);
 
   // bind main rect
-  sys_vgui("%s bind %s <ButtonRelease> \
+  sys_vgui(".x%lx.c bind t%lx%d <ButtonRelease> \
            {pdsend [concat %s _br \\;]}\n", 
-           x->idcnv, x->id_base, 
+           x->x_canvas, x, M_BASE, 
            x->x_bindname->s_name);
  
-  pd_cf_text(x->idcnv, x->id_label,
+  pd_cf_text(x, M_LABEL,
 	     x->x_lcol,
 	     x->x_fontsize,
 	     x->xpos + x->x_ldx,
@@ -638,7 +1033,7 @@ void n_canvas_draw_new(t_n_canvas *x, t_glist *glist)
       switch (x->e[id].type)
 	{
 	case LINE:
-	  pd_cf_line(x->idcnv, x->e[id].id,
+	  pd_cf_line(x, id,
 		     x->e[id].fcol,
 		     x->e[id].s,
 		     x->xpos + x->e[id].x[0],
@@ -648,7 +1043,7 @@ void n_canvas_draw_new(t_n_canvas *x, t_glist *glist)
 	  break;
 	  
 	case RECT:
-	  pd_cf_rect(x->idcnv, x->e[id].id,
+	  pd_cf_rect(x, id,
 		     x->e[id].fcol,
 		     x->e[id].s,
 		     x->xpos + x->e[id].x[0],
@@ -658,7 +1053,7 @@ void n_canvas_draw_new(t_n_canvas *x, t_glist *glist)
 	  break;
 	  
 	case RECT_F:
-	  pd_cf_rect_filled(x->idcnv, x->e[id].id,
+	  pd_cf_rect_filled(x, id,
 			    x->e[id].fcol,
 			    x->e[id].bcol,
 			    x->e[id].s,
@@ -669,7 +1064,7 @@ void n_canvas_draw_new(t_n_canvas *x, t_glist *glist)
 	  break;
 	  
 	case OVAL:
-	  pd_cf_oval(x->idcnv, x->e[id].id,
+	  pd_cf_oval(x, id,
 		     x->e[id].fcol,
 		     x->e[id].s,
 		     x->xpos + x->e[id].x[0],
@@ -679,7 +1074,7 @@ void n_canvas_draw_new(t_n_canvas *x, t_glist *glist)
 	  break;
 	  
 	case OVAL_F:
-	  pd_cf_oval_filled(x->idcnv, x->e[id].id,
+	  pd_cf_oval_filled(x, id,
 			    x->e[id].fcol,
 			    x->e[id].bcol,
 			    x->e[id].s,
@@ -690,7 +1085,7 @@ void n_canvas_draw_new(t_n_canvas *x, t_glist *glist)
 	  break;
 	  
 	case ARC:
-	  pd_cf_arc(x->idcnv, x->e[id].id,
+	  pd_cf_arc(x, id,
 		    x->e[id].fcol,
 		    x->e[id].s,
 		    x->e[id].st,
@@ -702,7 +1097,7 @@ void n_canvas_draw_new(t_n_canvas *x, t_glist *glist)
 	  break;
 	  
 	case ARC_F:
-	  pd_cf_arc_filled(x->idcnv, x->e[id].id,
+	  pd_cf_arc_filled(x, id,
 			   x->e[id].fcol,
 			   x->e[id].bcol,
 			   x->e[id].s,
@@ -715,7 +1110,7 @@ void n_canvas_draw_new(t_n_canvas *x, t_glist *glist)
 	  break;
 	  
 	case TEXT:
-	  pd_cf_text(x->idcnv, x->e[id].id,
+	  pd_cf_text(x, id,
 		     x->e[id].fcol,
 		     x->e[id].s,
 		     x->xpos + x->e[id].x[0],
@@ -731,28 +1126,29 @@ void n_canvas_draw_move(t_n_canvas *x, t_glist *glist)
 {
   x->xpos = text_xpix(&x->x_obj, glist);
   x->ypos = text_ypix(&x->x_obj, glist);
+  x->x_canvas = glist_getcanvas(glist);
   
-  pd_cf_coords_4(x->idcnv, x->id_base,
+  pd_cf_coords_4(x, M_BASE,
 		 x->xpos,
 		 x->ypos,
 		 x->xpos + x->x_w,
 		 x->ypos + x->x_h);
   
-  pd_cf_coords_2(x->idcnv, x->id_label,
+  pd_cf_coords_2(x, M_LABEL,
 		 x->xpos + x->x_ldx,
 		 x->ypos + x->x_ldy);
   
   for (int id = 0; id < x->maxel; id++)
     {
       if (x->e[id].type > ERASE && x->e[id].type < TEXT)
-	pd_cf_coords_4(x->idcnv, x->e[id].id,
+	pd_cf_coords_4(x, id,
 		       x->xpos + x->e[id].x[0],
 		       x->ypos + x->e[id].y[0],
 		       x->xpos + x->e[id].x[1],
 		       x->ypos + x->e[id].y[1]);
       
       else if (x->e[id].type == TEXT)
-	pd_cf_coords_2(x->idcnv, x->e[id].id,
+	pd_cf_coords_2(x, id,
 		       x->xpos + x->e[id].x[0],
 		       x->ypos + x->e[id].y[0]);
     }
@@ -761,14 +1157,15 @@ void n_canvas_draw_move(t_n_canvas *x, t_glist *glist)
 //----------------------------------------------------------------------------//
 void n_canvas_draw_erase(t_n_canvas *x, t_glist *glist)
 {
+  x->x_canvas = glist_getcanvas(glist);
   if(glist_isvisible(x->x_glist))
     { 
-      pd_cf_erase(x->idcnv, x->id_base);
-      pd_cf_erase(x->idcnv, x->id_label);
+      pd_cf_erase(x, M_BASE);
+      pd_cf_erase(x, M_LABEL);
       
       for (int id = 0; id < x->maxel; id++)
 	if (x->e[id].type > 0 && x->e[id].type < 9)
-	  pd_cf_erase(x->idcnv, x->e[id].id);
+	  pd_cf_erase(x, id);
     }
 }
 
@@ -777,27 +1174,27 @@ void n_canvas_draw_config(t_n_canvas *x)
 {
   if(glist_isvisible(x->x_glist))
     { 
-      pd_cf_coords_4(x->idcnv, x->id_base,
+      pd_cf_coords_4(x, M_BASE,
 		     x->xpos,
 		     x->ypos,
 		     x->xpos + x->x_w,
 		     x->ypos + x->x_h);
       
-      pd_cf_color_2(x->idcnv, x->id_base,
+      pd_cf_color_2(x, M_BASE,
 		    x->x_fcol,
 		    x->x_bcol);
       
-      pd_cf_coords_2(x->idcnv, x->id_label,
+      pd_cf_coords_2(x, M_LABEL,
 		     x->xpos + x->x_ldx,
 		     x->ypos + x->x_ldy);
       
-      pd_cf_color_line(x->idcnv, x->id_label,
+      pd_cf_color_line(x, M_LABEL,
 		       x->x_lcol);
       
-      pd_cf_tx(x->idcnv, x->id_label,
+      pd_cf_tx(x, M_LABEL,
 	       (strcmp(x->x_lab->s_name, "empty") ? x->x_lab->s_name : " "));
       
-      pd_cf_fs(x->idcnv, x->id_label,
+      pd_cf_fs(x, M_LABEL,
 	       x->x_fontsize);
     }
 }
@@ -850,7 +1247,9 @@ void n_canvas_click(t_n_canvas *x, int xpix, int ypix)
 }
 
 //----------------------------------------------------------------------------//
-int n_canvas_newclick(t_gobj *z, struct _glist *glist, int xpix, int ypix, int shift, int alt, int dbl, int doit)
+int n_canvas_newclick(t_gobj *z, struct _glist *glist, 
+		      int xpix, int ypix, 
+		      int shift, int alt, int dbl, int doit)
 {
   t_n_canvas *x = (t_n_canvas *)z;
   x->xpos = text_xpix(&x->x_obj, glist);
@@ -892,12 +1291,6 @@ void n_canvas_mem(t_n_canvas *x)
   if (!x->e)
     {
       post("n_canvas: error allocating memory");
-      return;
-    }
-  int id;
-  for (id=0; id<x->maxel; id++)
-    {
-      sprintf(x->e[id].id,"t%lx%d", (long)x, id);
     }
 }
 
@@ -1005,7 +1398,7 @@ void n_canvas_maxel(t_n_canvas *x, t_floatarg f)
 	{
 	  if (x->e[id].type > ERASE && x->e[id].type <= TEXT)
 	    {
-	      pd_cf_erase(x->idcnv, x->e[id].id);
+	      pd_cf_erase(x, id);
 	    }
 	}
     }
@@ -1189,6 +1582,7 @@ void n_canvas_vis(t_gobj *z, t_glist *glist, int vis)
     }
 }
 
+
 //----------------------------------------------------------------------------//
 // setup
 //----------------------------------------------------------------------------//
@@ -1271,9 +1665,6 @@ void *n_canvas_new(t_symbol *s, int ac, t_atom *av)
   // ...
   x->x_glist = (t_glist *)canvas_getcurrent();
   x->x_canvas = glist_getcanvas(x->x_glist);
-  sprintf(x->idcnv,".x%lx.c",(long unsigned int)x->x_canvas);
-  sprintf(x->id_base,"t%lx%d", (long)x, M_BASE);
-  sprintf(x->id_label,"t%lx%d", (long)x, M_LABEL);
 
   // maxel
   CLIP_MINMAX(1, MAXEL, x->maxel);
