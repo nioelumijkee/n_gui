@@ -68,6 +68,7 @@ typedef struct _n_canvas
   t_object x_obj;
   t_canvas *x_canvas;
   t_glist *x_glist;
+  t_symbol *x_bindname;
   int xpos;
   int ypos;
   int x_w; /* par */
@@ -87,9 +88,11 @@ typedef struct _n_canvas
   int x_rcv_able;
   int m_xp; /* mouse keys */
   int m_yp;
-  int m_pos;
+  int m_bp;
   int m_shift;
   int m_alt;
+  int m_br;
+  int m_dbl;
   int maxel; /* max elements */
   struct _n_canvas_element *e;
   t_symbol *s_empty; /* */
@@ -616,7 +619,13 @@ void n_canvas_draw_new(t_n_canvas *x, t_glist *glist)
 		    x->ypos,
 		    x->xpos + x->x_w,
 		    x->ypos + x->x_h);
-  
+
+  // bind main rect
+  sys_vgui("%s bind %s <ButtonRelease> \
+           {pdsend [concat %s _br \\;]}\n", 
+           x->idcnv, x->id_base, 
+           x->x_bindname->s_name);
+ 
   pd_cf_text(x->idcnv, x->id_label,
 	     x->x_lcol,
 	     x->x_fontsize,
@@ -798,16 +807,20 @@ void n_canvas_draw_config(t_n_canvas *x)
 //----------------------------------------------------------------------------//
 void n_canvas_mouseout(t_n_canvas *x)
 {
-  t_atom a[5];
-  SETFLOAT(a, (t_float)x->m_pos);
-  SETFLOAT(a + 1, (t_float)x->m_xp);
-  SETFLOAT(a + 2, (t_float)x->m_yp);
-  SETFLOAT(a + 3, (t_float)x->m_shift);
-  SETFLOAT(a + 4, (t_float)x->m_alt);
-  outlet_list(x->x_obj.ob_outlet, &s_list, 5, a);
+  t_atom a[6];
+  int bs; // button state
+  if (x->m_br == 0) bs = x->m_bp;  // press
+  else              bs = 0;        // release
+  SETFLOAT(a,     (t_float)bs);
+  SETFLOAT(a + 1, (t_float)x->m_dbl);
+  SETFLOAT(a + 2, (t_float)x->m_xp);
+  SETFLOAT(a + 3, (t_float)x->m_yp);
+  SETFLOAT(a + 4, (t_float)x->m_shift);
+  SETFLOAT(a + 5, (t_float)x->m_alt);
+  outlet_list(x->x_obj.ob_outlet, &s_list, 6, a);
   if (x->x_snd_able && x->x_snd_real->s_thing)
     {
-      pd_list(x->x_snd_real->s_thing, &s_list, 5, a);
+      pd_list(x->x_snd_real->s_thing, &s_list, 6, a);
     }
 }
 
@@ -816,7 +829,7 @@ void n_canvas_motion(t_n_canvas *x, t_floatarg dx, t_floatarg dy)
 {
   x->m_xp += dx;
   x->m_yp += dy;
-  x->m_pos = 2;
+  x->m_bp = 2;
   n_canvas_mouseout(x);
 }
 
@@ -831,7 +844,8 @@ void n_canvas_click(t_n_canvas *x, int xpix, int ypix)
 	     (t_floatarg)ypix);
   x->m_xp = xpix - x->xpos;
   x->m_yp = ypix - x->ypos;
-  x->m_pos = 1;
+  x->m_bp = 1;
+  x->m_br = 0; // release
   n_canvas_mouseout(x);
 }
 
@@ -843,10 +857,10 @@ int n_canvas_newclick(t_gobj *z, struct _glist *glist, int xpix, int ypix, int s
   x->ypos = text_ypix(&x->x_obj, glist);
   x->m_xp = xpix - x->xpos;
   x->m_yp = ypix - x->ypos;
-  x->m_pos = 0;
-  x->m_shift = dbl;
+  x->m_bp = 0;
   x->m_shift = shift;
   x->m_alt = alt;
+  x->m_dbl = dbl;
   n_canvas_mouseout(x);
   if (doit)
     n_canvas_click(x, xpix, ypix);
@@ -1001,6 +1015,17 @@ void n_canvas_maxel(t_n_canvas *x, t_floatarg f)
   CLIP_MINMAX(1, MAXEL, x->maxel);
   n_canvas_free(x);
   n_canvas_mem(x);
+}
+
+//----------------------------------------------------------------------------//
+// callback
+// -------------------------------------------------------------------------- //
+static void n_canvas_br_callback(t_n_canvas* x)
+{ 
+  if(!x->x_glist->gl_edit)
+    {
+      x->m_br = 1; // release
+    }
 }
 
 //----------------------------------------------------------------------------//
@@ -1169,6 +1194,7 @@ void n_canvas_vis(t_gobj *z, t_glist *glist, int vis)
 //----------------------------------------------------------------------------//
 void *n_canvas_new(t_symbol *s, int ac, t_atom *av)
 {
+  char buf[MAXPDSTRING];
   t_n_canvas *x = (t_n_canvas *)pd_new(n_canvas_class);
   
   // empty symbol
@@ -1176,6 +1202,10 @@ void *n_canvas_new(t_symbol *s, int ac, t_atom *av)
   
   // $0
   x->dollarzero = canvas_getdollarzero();
+
+  // bind
+  sprintf(buf, "#%lx", (long)x);
+  pd_bind(&x->x_obj.ob_pd, x->x_bindname = gensym(buf));
   
   // arguments
   if ((ac == 12) 
@@ -1260,6 +1290,7 @@ void *n_canvas_new(t_symbol *s, int ac, t_atom *av)
 void n_canvas_ff(t_n_canvas *x)
 {
   n_canvas_free(x);
+  pd_unbind(&x->x_obj.ob_pd, x->x_bindname);
   // unbind
   if (x->x_rcv_able)
     {
@@ -1291,6 +1322,8 @@ void n_canvas_setup(void)
 		  gensym("color"),A_FLOAT,A_FLOAT,A_FLOAT,0);
   class_addmethod(n_canvas_class,(t_method)n_canvas_dialog,
 		  gensym("dialog"),A_GIMME,0);
+  class_addmethod(n_canvas_class,(t_method)n_canvas_br_callback,
+		  gensym("_br"),0);
   n_canvas_widgetbehavior.w_getrectfn=n_canvas_getrect;
   n_canvas_widgetbehavior.w_displacefn=n_canvas_displace;
   n_canvas_widgetbehavior.w_selectfn=NULL;
