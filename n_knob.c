@@ -435,30 +435,30 @@ static void n_knob_out(t_n_knob *x)
 }
 
 // -------------------------------------------------------------------------- //
-t_float quantize(t_float f, t_float step)
+t_float quantize(t_float state, t_float step)
 {
   int i;
   if (step > 0)
     {
-      if (f > 0)
+      if (state > 0)
         {
-          i = (f / step) + 0.49999;
-          f = i * step;
+          i = (state / step) + 0.5;
+          state = i * step;
         }
       else
         {
-          i = (f / step) - 0.49999;
-          f = i * step;
+          i = (state / step) - 0.5;
+          state = i * step;
         }
     }
-  return (f);
+  return (state);
 }
 
 //----------------------------------------------------------------------------//
 static void n_knob_calc_state_from_count(t_n_knob *x)
 {
-  x->state = ((x->count / x->resolution) * x->diff) + x->min;
-  x->state = quantize(x->state, x->step);
+  t_float f = ((x->count / x->resolution) * x->diff) + x->min;
+  x->state = quantize(f, x->step);
 }
 
 //----------------------------------------------------------------------------//
@@ -507,7 +507,7 @@ static void n_knob_motion(t_n_knob *x, t_float dx, t_float dy)
   n_knob_calc_state_from_count(x);
   if (x->state != x->state_old)
     {
-      x->framepos = (x->count / x->resolution) * (x->frames - 1);
+      x->framepos = ((x->state - x->min) / x->diff) * (x->frames - 1.0);
       if(visible(x))
         {
           if (x->framepos != x->framepos_old)
@@ -1223,7 +1223,6 @@ static void *n_knob_new(t_symbol *s, t_int ac, t_atom *av)
   x->sel = 0;
   x->state_old = NEVERST;
   x->framepos_old = NEVERST;
-  /* x->num_disp = 0; */
   
   // arguments
   if (ac == 23

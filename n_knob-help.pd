@@ -5,7 +5,7 @@
 #X text 53 42 Add an object and change parameters using the settings
 window or, f 64;
 #X text 151 57 the methods described below.;
-#X obj 168 164 n_knob default.gif 1 33 -1 1 0 0 256 empty empty Knob
+#X obj 168 164 n_knob default.gif 1 33 -1 1 0.1 0 256 empty empty Knob
 11 0 -8 0 0 0 1 3 11 -4 38 0;
 #N canvas 49 160 513 399 label 0;
 #X obj 129 187 n_knob default.gif 1 33 0 1 0.01 0.5 256 empty empty
@@ -38,8 +38,8 @@ Knob 11 15 -8 0 0.5 0 0 5 11 0 42 0;
 #X connect 4 0 0 0;
 #X restore 415 128 pd label;
 #N canvas 232 95 516 598 image 0;
-#X obj 101 264 n_knob def24.png 1 65 0 1 0.01 0.5 256 empty empty empty
-11 0 -8 0 0.5 0 0 5 11 0 42 0;
+#X obj 101 264 n_knob default.gif 0 33 0 1 0.01 0.5 256 empty empty
+empty 11 0 -8 0 1 0 0 5 11 0 42 0;
 #X text 90 30 When you download the image file \, n_knob searches in
 two places. This is the current directory \, and the directory where
 the library is located. The image must have a supported format(gif
@@ -72,16 +72,16 @@ vertical orientation(0 - horizontal \, 1 - vertical).;
 #X msg 151 192 image default.gif 0 33;
 #X msg 162 212 image def32.png 0 65;
 #X msg 172 232 image def24.png 0 65;
-#X text 152 439 All availibale images in n_gui/iamges;
 #X obj 56 482 cnv 15 400 100 empty empty empty 20 12 0 14 #bbbbbb #404040
 0;
 #X obj 101 519 n_knob default.gif 1 33 0 1 0.01 0.5 256 empty empty
-default.gif 11 -22 -8 0 0.2 0 0 5 11 0 42 0;
+default.gif 11 -22 -8 0 0.99 0 0 5 11 0 42 0;
 #X obj 242 521 n_knob def32.png 1 65 0 1 0.01 0.5 256 empty empty def32.png
-11 -18 -8 0 0.45 0 0 5 11 0 42 0;
+11 -18 -8 0 0.98 0 0 5 11 0 42 0;
 #X obj 377 528 n_knob def24.png 1 65 0 1 0.01 0.5 256 empty empty def24.png
-11 -22 -8 0 0.57 0 0 5 11 0 42 0;
+11 -22 -8 0 1 0 0 5 11 0 42 0;
 #X text 182 457 (png files with transparency);
+#X text 152 439 All availibale images in n_gui/images;
 #X connect 0 0 10 0;
 #X connect 11 0 0 0;
 #X connect 22 0 0 0;
@@ -90,48 +90,9 @@ default.gif 11 -22 -8 0 0.2 0 0 5 11 0 42 0;
 #X connect 25 0 0 0;
 #X connect 26 0 0 0;
 #X restore 271 88 pd image \, frames and orientation;
-#N canvas 446 207 619 388 knob 0;
-#X text 78 35 knobpar <float> <float> <float> <float> <float> - set
-knob parametres:, f 77;
-#X text 132 46 |, f 68;
-#X text 180 46 |, f 60;
-#X text 228 46 |, f 52;
-#X text 276 46 |, f 44;
-#X text 324 46 |, f 36;
-#X text 132 57 |, f 68;
-#X text 180 57 |, f 60;
-#X text 228 57 |, f 52;
-#X text 276 57 |, f 44;
-#X text 324 57 resolution, f 36;
-#X text 132 68 |, f 68;
-#X text 180 68 |, f 60;
-#X text 228 68 |, f 52;
-#X text 276 68 default state, f 44;
-#X text 132 79 |, f 68;
-#X text 180 79 |, f 60;
-#X text 228 79 step, f 52;
-#X text 132 90 |, f 68;
-#X text 180 90 max, f 60;
-#X text 132 101 min, f 68;
-#X text 78 112 min \, max \, step - minimum \, maximum value and step.
-, f 77;
-#X text 78 123 resolution - number of pixels that need to be leaning
-with the mouse, f 77;
-#X text 78 134 to get the entire state range., f 77;
-#X obj 161 274 n_knob default.gif 1 33 100 -200 5 50 256 empty empty
-empty 11 0 -8 0 50 0 1 5 11 8 42 0;
-#X floatatom 161 338 5 0 0 0 - - - 0;
-#X msg 171 205 knobpar 100 -200 5 50 256;
-#X text 324 182 float;
-#X text 343 205 int;
-#X msg 161 185 knobpar -5 5 0 0 128;
-#X connect 24 0 25 0;
-#X connect 26 0 24 0;
-#X connect 29 0 24 0;
-#X restore 356 168 pd knob parametres;
 #N canvas 127 202 566 379 numeric 0;
 #X obj 49 188 n_knob default.gif 1 33 -1 1 0 0 256 empty empty empty
-11 0 -4 65793 0 0 1 4 14 -12 40 0;
+11 0 -4 65793 1 0 1 5 11 34 14 2641940;
 #X obj 49 15 tgl 15 1 empty empty empty 17 7 0 10 #fcfcfc #000000 #000000
 1 1;
 #X msg 49 37 numvis \$1;
@@ -278,6 +239,7 @@ state value., f 65;
 empty 11 -4 -8 0 0.5 0 1 4 11 -6 42 0;
 #X msg 220 153 default;
 #X text 277 154 or doubleclick.;
+#X text 41 195 Shift - for fine tunning;
 #X connect 3 0 2 0;
 #X restore 417 208 pd mouse;
 #N canvas 578 135 388 532 example: 0;
@@ -326,3 +288,42 @@ Amplitude 11 0 -8 0 0.25 0 0 5 11 0 42 0;
 #X connect 18 0 19 0;
 #X connect 18 0 19 1;
 #X restore 28 273 pd example: default.gif(no init);
+#N canvas 446 207 619 388 knob 0;
+#X text 78 35 knobpar <float> <float> <float> <float> <float> - set
+knob parametres:, f 77;
+#X text 132 46 |, f 68;
+#X text 180 46 |, f 60;
+#X text 228 46 |, f 52;
+#X text 276 46 |, f 44;
+#X text 324 46 |, f 36;
+#X text 132 57 |, f 68;
+#X text 180 57 |, f 60;
+#X text 228 57 |, f 52;
+#X text 276 57 |, f 44;
+#X text 324 57 resolution, f 36;
+#X text 132 68 |, f 68;
+#X text 180 68 |, f 60;
+#X text 228 68 |, f 52;
+#X text 276 68 default state, f 44;
+#X text 132 79 |, f 68;
+#X text 180 79 |, f 60;
+#X text 228 79 step, f 52;
+#X text 132 90 |, f 68;
+#X text 180 90 max, f 60;
+#X text 132 101 min, f 68;
+#X text 78 112 min \, max \, step - minimum \, maximum value and step.
+, f 77;
+#X text 78 123 resolution - number of pixels that need to be leaning
+with the mouse, f 77;
+#X text 78 134 to get the entire state range., f 77;
+#X obj 161 274 n_knob default.gif 1 33 100 -200 5 50 256 empty empty
+empty 11 0 -8 0 50 0 1 5 11 8 42 0;
+#X floatatom 161 338 5 0 0 0 - - - 0;
+#X msg 171 205 knobpar 100 -200 5 50 256;
+#X text 324 182 float;
+#X text 343 205 int;
+#X msg 161 185 knobpar -5 5 0 0 128;
+#X connect 24 0 25 0;
+#X connect 26 0 24 0;
+#X connect 29 0 24 0;
+#X restore 356 168 pd knob parameters;
