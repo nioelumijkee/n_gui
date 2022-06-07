@@ -67,7 +67,7 @@ typedef struct _n_canvas
   t_canvas *x_canvas;
   t_glist *x_glist;
   t_symbol *x_bindname;
-  int xpos;
+  int xpos; /* pos in canvas */
   int ypos;
   int x_w; /* par */
   int x_h;
@@ -815,10 +815,10 @@ void n_canvas_mouseout(t_n_canvas *x)
   SETFLOAT(a + 3, (t_float)x->m_yp);
   SETFLOAT(a + 4, (t_float)x->m_shift);
   SETFLOAT(a + 5, (t_float)x->m_alt);
-  outlet_list(x->x_obj.ob_outlet, &s_list, 6, a);
+  outlet_anything(x->x_obj.ob_outlet, gensym("mouse"), 6, a);
   if (x->x_snd_able && x->x_snd_real->s_thing)
     {
-      pd_list(x->x_snd_real->s_thing, &s_list, 6, a);
+      pd_anything(x->x_snd_real->s_thing, gensym("mouse"), 6, a);
     }
 }
 
@@ -1009,6 +1009,19 @@ void n_canvas_maxel(t_n_canvas *x, t_floatarg f)
   CLIP_MINMAX(1, MAXEL, x->maxel);
   n_canvas_free(x);
   n_canvas_mem(x);
+}
+
+//----------------------------------------------------------------------------//
+void n_canvas_getpos(t_n_canvas *x)
+{
+  t_atom a[2];
+  SETFLOAT(a,     (t_float)x->xpos);
+  SETFLOAT(a + 1, (t_float)x->ypos);
+  outlet_anything(x->x_obj.ob_outlet, gensym("pos"), 2, a);
+  if (x->x_snd_able && x->x_snd_real->s_thing)
+    {
+      pd_anything(x->x_snd_real->s_thing, gensym("pos"), 2, a);
+    }
 }
 
 //----------------------------------------------------------------------------//
@@ -1316,6 +1329,8 @@ void n_canvas_setup(void)
 		  gensym("dialog"),A_GIMME,0);
   class_addmethod(n_canvas_class,(t_method)n_canvas_br_callback,
 		  gensym("_br"),0);
+  class_addmethod(n_canvas_class,(t_method)n_canvas_getpos,
+		  gensym("getpos"),0);
   n_canvas_widgetbehavior.w_getrectfn=n_canvas_getrect;
   n_canvas_widgetbehavior.w_displacefn=n_canvas_displace;
   n_canvas_widgetbehavior.w_selectfn=NULL;
