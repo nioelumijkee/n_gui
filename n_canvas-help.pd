@@ -487,14 +487,14 @@ x1 y1;
 #X text 37 484 0 - Button released \, 1 - Button click \, 2 - Button
 pressed;
 #X text 184 367 (or Control);
-#N canvas 138 280 511 397 <- 0;
+#N canvas 138 280 592 399 <- 0;
 #X obj 114 4 r \$0-s-main;
 #X obj 114 48 unpack f f f f f f;
 #X obj 114 118 sel 0;
 #X obj 114 362 s \$0-r-main;
 #X msg 114 341 0 0 \, 0 1 \, 0 2;
 #X obj 176 285 s \$0-r-main;
-#X text 334 249 create lines and rect.;
+#X text 315 277 create lines and rect.;
 #X text 22 344 erase objects.;
 #X obj 163 71 clip 0 200;
 #X obj 209 93 clip 0 200;
